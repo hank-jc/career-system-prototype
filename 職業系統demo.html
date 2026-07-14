@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>職業系統 UI/UX 流程 Demo</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { background:#23252a; font-family:-apple-system,"PingFang TC","Noto Sans TC",sans-serif; color:#2d2a24;
+         display:flex; flex-direction:column; align-items:center; gap:14px; padding:18px 10px; min-height:100vh; }
+  .stage-note { width:405px; max-width:96vw; color:#8b8e96; font-size:12px; line-height:1.5; text-align:center; font-family:ui-monospace,monospace; }
+  /* 自動截圖模式：將 405×720 prototype 等比放大為 1080×1920，並隱藏開發控制。 */
+  body.capture-mode { width:1080px; height:1920px; min-height:0; padding:0; gap:0; display:block; overflow:hidden; background:#f2ede3; }
+  body.capture-mode .phone { width:405px; max-width:none; height:720px; aspect-ratio:auto; border-radius:0; box-shadow:none;
+                             transform:scale(2.6666667); transform-origin:top left; }
+  body.capture-mode .debug,
+  body.capture-mode .stage-note { display:none; }
+
+  /* ===== 手機框 ===== */
+  .phone { width:405px; max-width:96vw; aspect-ratio:9 / 16; background:#f2ede3; border-radius:26px;
+           box-shadow:0 12px 40px rgba(0,0,0,.5); overflow:hidden; position:relative; display:flex; flex-direction:column; }
+
+  /* ===== 頂欄 ===== */
+  .topbar { background:#4a4438; color:#f2ede3; padding:6px 12px; display:flex; align-items:center; gap:8px; font-size:12px; }
+  .topbar .lv { background:#6b6250; padding:2px 8px; border-radius:10px; font-weight:600; }
+  .cur { margin-left:auto; display:flex; gap:8px; }
+  .cur span { background:rgba(255,255,255,.12); padding:2px 8px; border-radius:10px; }
+  .page-title { flex:0 0 36px; display:flex; align-items:center; justify-content:center; background:#f2ede3;
+                font-size:20px; font-weight:900; letter-spacing:3px; color:#302b24; border-bottom:1px solid #ddd4c1; }
+
+  /* ===== 主頁 ===== */
+  .main { flex:1; min-height:0; overflow:hidden; padding:8px 12px 10px; display:flex; flex-direction:column; gap:7px; }
+  .char-area { background:#e7e0d0; border:2px solid #d3c9b4; border-radius:14px; padding:8px 12px 7px; text-align:center; position:relative; }
+  .char-emoji { font-size:50px; line-height:1; filter:drop-shadow(0 4px 3px rgba(0,0,0,.18)); }
+  .char-pedestal { width:92px; height:9px; background:radial-gradient(ellipse at center,#c9bda2 0%,transparent 72%); margin:0 auto 4px; border-radius:50%; }
+  .class-pill { display:inline-block; background:#4a4438; color:#f2ede3; padding:3px 14px; border-radius:12px; font-weight:700; font-size:13px; }
+  .role-badge { position:absolute; top:8px; right:8px; color:#fff; font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; }
+  .rage-wrap { margin-top:10px; text-align:left; }
+  /* v0.5：機制改為資訊區一行摘要，點擊展開完整規則（不再掛在角色立繪上） */
+  .mech-row { cursor:pointer; align-items:center; }
+  .mech-row .chev { margin-left:auto; color:#b6ac95; font-size:11px; transition:transform .15s; }
+  .mech-row.open .chev { transform:rotate(180deg); }
+  .mech-rule { display:none; padding:6px 9px 7px; font-size:10px; color:#6f6754; line-height:1.45;
+               background:#faf6ea; border-bottom:1px solid #eee5d2; }
+  .mech-row.open + .mech-rule { display:block; }
+
+  /* v0.5：已選槽 bubble 快覽（點槽位原地浮出說明 + 管理入口） */
+  .slot-bubble { position:absolute; bottom:calc(100% + 10px); width:216px; background:#4a4438; color:#f2ede3;
+                 border-radius:12px; padding:11px 12px; font-size:12px; line-height:1.55; text-align:left;
+                 box-shadow:0 6px 18px rgba(0,0,0,.35); z-index:30; cursor:default; }
+  .slot-bubble::after { content:""; position:absolute; top:100%; border:7px solid transparent; border-top-color:#4a4438; }
+  .slot-bubble.al { left:-6px; } .slot-bubble.al::after { left:24px; }
+  .slot-bubble.ac { left:50%; transform:translateX(-50%); } .slot-bubble.ac::after { left:50%; margin-left:-7px; }
+  .slot-bubble.ar { right:-6px; } .slot-bubble.ar::after { right:24px; }
+  .slot-bubble .bt { font-weight:700; color:#f7d9a0; margin-bottom:3px; font-size:12px; }
+  .slot-bubble .btn-mini { display:block; width:100%; margin-top:8px; padding:7px 0; border:none; border-radius:9px;
+                 background:#4f7fd0; color:#fff; font-weight:700; font-size:12px; cursor:pointer; font-family:inherit; }
+  .rage-label { font-size:11px; color:#7a715e; margin-bottom:3px; }
+  .rage-bar { height:8px; background:#d3c9b4; border-radius:4px; overflow:hidden; }
+  .rage-fill { height:100%; width:45%; border-radius:4px; }
+
+  .info-rows { background:#fbf8f1; border:2px solid #d3c9b4; border-radius:12px; overflow:hidden; }
+  .info-row { display:flex; padding:5px 9px; font-size:12px; border-bottom:1px solid #eee5d2; }
+  .info-row:last-child { border-bottom:none; }
+  .info-row b { width:44px; color:#8a7f66; font-weight:600; flex-shrink:0; }
+  .mastery-block { padding:5px 9px 6px; border-top:1px solid #eee5d2; font-size:11px; }
+  .mastery-head { display:flex; align-items:center; gap:7px; font-weight:800; color:#5b5344; }
+  .mastery-head strong { color:#d07c20; font-size:13px; }
+  .mastery-tag { margin-left:auto; padding:1px 7px; border-radius:8px; background:#e8effa; color:#4f7fd0; font-size:9px; font-weight:700; }
+  .mastery-bonus { display:flex; gap:18px; margin-top:2px; color:#6f6754; }
+  .mastery-bonus span { font-weight:700; }
+
+  .sec-label { display:inline-block; background:#5b5344; color:#f2ede3; font-size:10px; font-weight:700; padding:2px 12px; border-radius:0 10px 10px 0; margin-left:-12px; }
+  .skill-card { background:#fbf8f1; border:2px solid #d3c9b4; border-radius:11px; padding:7px 9px; display:flex; gap:8px; align-items:center; position:relative; }
+  .skill-icon { width:38px; height:38px; border-radius:9px; background:#e7e0d0; border:2px solid #cfc4ab; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+  .skill-card .t { font-weight:700; font-size:12px; }
+  .skill-card .d { font-size:10px; color:#6f6754; margin-top:1px; padding-right:48px; }
+  .cd-badge { position:absolute; top:6px; right:8px; display:flex; align-items:center; gap:3px; font-size:9px; font-weight:700;
+              color:#4f7fd0; background:#e8effa; border:1px solid #c5d6f0; padding:2px 8px; border-radius:10px; }
+  /* 進化頁：主要技能 舊→新 對比 */
+  .skill-diff { display:flex; align-items:stretch; gap:8px; }
+  .skill-diff .half { flex:1; background:#fbf8f1; border:2px solid #d3c9b4; border-radius:12px; padding:7px; position:relative; }
+  .skill-diff .half.old { opacity:.6; }
+  .skill-diff .half.new { border-color:#d9902c; background:#fdf6e4; }
+  .skill-diff .row { display:flex; gap:8px; align-items:center; }
+  .skill-diff .mini-icon { width:34px; height:34px; border-radius:8px; background:#e7e0d0; border:2px solid #cfc4ab; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+  .skill-diff .nm { font-weight:700; font-size:12px; }
+  .skill-diff .cd { font-size:10px; color:#4f7fd0; }
+  .skill-diff .dd { font-size:10px; color:#6f6754; margin-top:4px; line-height:1.4; }
+  .skill-diff .mid-arrow { display:flex; align-items:center; color:#d9902c; font-size:20px; }
+  /* v0.6：進化候選共用固定高度詳情區，卡片只切換內容、不原地展開 */
+  .evo-preview-group { border:2px dashed #c9b98f; border-radius:12px; padding:8px; background:#faf6ea; }
+  .evo-preview-title { font-size:11px; font-weight:700; color:#8a7f66; margin-bottom:7px; }
+  .evo-preview-options { display:flex; gap:8px; }
+  .evo-preview-option { flex:1; min-width:0; border:2px solid #d3c9b4; border-radius:11px; padding:7px 4px;
+                        background:#fbf8f1; text-align:center; cursor:pointer; }
+  .evo-preview-option.active { border-color:#d9902c; background:#fdf6e4; box-shadow:0 0 0 2px rgba(217,144,44,.12); }
+  .evo-preview-option .oi { font-size:22px; }
+  .evo-preview-option .ot { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:10px; font-weight:700; }
+  .evo-preview-option .link-mech { font-size:9px; color:#a4552f; font-weight:600; }
+  .evo-preview-detail { min-height:78px; margin-top:8px; padding:9px 10px; border-radius:10px; background:#4a4438;
+                        color:#f2ede3; display:flex; flex-direction:column; justify-content:center; line-height:1.45; }
+  .evo-preview-detail .name { color:#f7d9a0; font-size:12px; font-weight:700; margin-bottom:3px; }
+  .evo-preview-detail .desc { font-size:11px; color:#efe7d6; }
+
+  .slots { display:flex; gap:6px; }
+  .slot { flex:1; aspect-ratio:1; border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+          gap:2px; font-size:19px; border:2px solid #cfc4ab; background:#fbf8f1; cursor:pointer; position:relative; user-select:none; }
+  .slot small { font-size:9px; color:#8a7f66; line-height:1.1; text-align:center; }
+  .slot.locked { background:#dcd4c2; color:#a89c81; cursor:not-allowed; }
+  .slot.empty { border-style:dashed; border-color:#c9962a; background:#fdf6e4; }
+  .slot.empty.has-dot::after { content:""; position:absolute; top:-4px; right:-4px; width:10px; height:10px; border-radius:50%; background:#d0392e; }
+  .slot.filled { border-color:#8a9a5b; background:#f0f3e4; }
+  .slot.fixed { border-color:#8b78b5; background:#f1edf8; }
+  .fixed-tag { position:absolute; top:3px; right:3px; padding:1px 4px; border-radius:5px; background:#8b78b5; color:#fff; font-size:7px; line-height:1.2; font-weight:700; }
+
+  .btn-row { display:flex; gap:8px; margin-top:auto; padding-top:3px; }
+  .btn { flex:1; padding:9px 0; border:none; border-radius:13px; font-size:14px; font-weight:700; cursor:pointer; color:#fff;
+         box-shadow:0 3px 0 rgba(0,0,0,.25); font-family:inherit; }
+  .btn:active { transform:translateY(2px); box-shadow:0 1px 0 rgba(0,0,0,.25); }
+  .btn.gold { background:#d9902c; }
+  .btn.blue { background:#4f7fd0; }
+  .btn.gray { background:#9a917d; }
+  .btn:disabled { background:#b6ac95; cursor:not-allowed; box-shadow:none; color:#e9e2d1; }
+  /* v0.5：提示統一紅點。進化可用不再用呼吸光效；「大事件」訊號由按鈕兩態文案承載 */
+  .btn { position:relative; }
+  .btn.has-dot::after { content:""; position:absolute; top:-4px; right:-4px; width:12px; height:12px; border-radius:50%;
+                        background:#d0392e; border:2px solid #f2ede3; }
+  .btn .sub { display:block; font-size:10px; font-weight:400; margin-top:1px; opacity:.9; }
+
+  /* ===== 彈窗 ===== */
+  .overlay { position:absolute; inset:0; background:rgba(30,26,18,.62); display:none; align-items:center; justify-content:center; padding:10px; z-index:10; }
+  .overlay.show { display:flex; }
+  .dialog { background:#f2ede3; border-radius:16px; width:100%; max-height:calc(100% - 12px); overflow:hidden; padding:0 0 10px; box-shadow:0 10px 30px rgba(0,0,0,.4); }
+  .dialog-title { background:#4a4438; color:#f2ede3; text-align:center; font-weight:700; font-size:16px; padding:10px; border-radius:16px 16px 0 0; position:sticky; top:0; }
+  .dialog-body { padding:10px 12px; display:flex; flex-direction:column; gap:7px; }
+  .close-x { display:block; margin:7px auto 0; width:32px; height:32px; border-radius:50%; background:#d0392e; color:#fff; border:3px solid #fff;
+             font-size:16px; font-weight:700; cursor:pointer; box-shadow:0 3px 6px rgba(0,0,0,.3); }
+
+  /* 選職業卡 */
+  .pick-hint { text-align:center; font-size:12px; color:#7a715e; }
+  .pick-card { background:#fbf8f1; border:3px solid #d3c9b4; border-radius:14px; padding:7px 10px; display:flex; gap:9px; align-items:center; cursor:pointer; position:relative; }
+  .pick-card.sel { border-color:#d9902c; background:#fdf6e4; }
+  .pick-card .avatar { font-size:36px; width:52px; text-align:center; flex-shrink:0; }
+  .pick-card .lines { flex:1; font-size:10px; display:flex; flex-direction:column; gap:2px; }
+  .pick-card .lines .nm { font-size:13px; font-weight:700; }
+  .pick-card .lines .kv b { color:#8a7f66; font-weight:600; margin-right:4px; }
+  .pick-card .role-badge { top:10px; right:10px; }
+  .locked-veil .pick-card { opacity:.65; cursor:default; }
+  .lock-banner { background:#5b5344; color:#f2ede3; font-size:12px; text-align:center; padding:8px; border-radius:10px; }
+
+  /* 進化 / 切換詳情 */
+  .evo-pair { display:flex; align-items:center; justify-content:center; gap:12px; padding:4px 0 0; }
+  .evo-pair .who { text-align:center; }
+  .evo-pair .who .e { font-size:42px; }
+  .evo-pair .who .n { font-size:12px; font-weight:700; background:#4a4438; color:#f2ede3; padding:2px 10px; border-radius:10px; margin-top:4px; display:inline-block; }
+  .evo-arrow { font-size:26px; color:#d9902c; }
+  .glow { animation:pop .5s ease; }
+  .slot.just-unlocked { animation:unlockPulse 1.4s ease; }
+  @keyframes unlockPulse {
+    0%   { transform:scale(.4); opacity:0; box-shadow:0 0 0 0 rgba(217,144,44,.9); border-color:#d9902c; }
+    35%  { transform:scale(1.12); opacity:1; box-shadow:0 0 14px 4px rgba(217,144,44,.8); border-color:#d9902c; }
+    70%  { transform:scale(1); box-shadow:0 0 8px 2px rgba(217,144,44,.5); border-color:#d9902c; }
+    100% { transform:scale(1); box-shadow:0 0 0 0 rgba(217,144,44,0); }
+  }
+  @keyframes pop { 0%{transform:scale(.6);opacity:0} 100%{transform:scale(1);opacity:1} }
+
+  /* 切換職業列表 */
+  .line-row { background:#fbf8f1; border:2px solid #d3c9b4; border-radius:12px; padding:8px 10px; cursor:pointer; }
+  .line-row.current { border-color:#8a9a5b; }
+  .line-row .hd { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; margin-bottom:4px; }
+  .line-row .tag { font-size:10px; color:#fff; background:#8a9a5b; padding:1px 8px; border-radius:8px; font-weight:600; }
+  .line-stages { display:flex; align-items:center; gap:3px; }
+  .line-stages .st { text-align:center; flex:1; }
+  .line-stages .st .e { font-size:23px; }
+  .line-stages .st.future .e { filter:brightness(0) opacity(.35); }
+  .line-stages .st .lv { font-size:9px; color:#8a7f66; }
+  .line-stages .arr { color:#b6ac95; font-size:10px; }
+  .switch-mech { display:flex; align-items:center; gap:6px; min-height:28px; padding:5px 8px; border-radius:9px;
+                 background:#fbf8f1; border:1px solid #ded4bf; font-size:10px; color:#7a715e; }
+  .switch-mech .label { color:#8a7f66; font-weight:700; }
+  .switch-slots .slot.previewable { cursor:pointer; }
+  .switch-slots .slot.preview-active { border-color:#d9902c; background:#fdf6e4; box-shadow:0 0 0 2px rgba(217,144,44,.12); }
+  .switch-preview { min-height:139px; border:2px dashed #c9b98f; border-radius:12px; padding:8px; background:#faf6ea; }
+  .switch-preview.placeholder { display:flex; align-items:center; justify-content:center; color:#8a7f66; font-size:11px; text-align:center; }
+  .switch-preview .evo-preview-detail { min-height:62px; }
+  .switch-preview-note { margin-top:5px; color:#8a7f66; font-size:9px; text-align:center; }
+
+  /* 被動面板（底部抽屜） */
+  .sheet { position:absolute; left:0; right:0; bottom:0; background:#f2ede3; border-radius:18px 18px 0 0; padding:12px; z-index:20;
+           box-shadow:0 -8px 24px rgba(0,0,0,.35); display:none; flex-direction:column; gap:7px; max-height:70%; overflow:hidden; }
+  .sheet.show { display:flex; }
+  .sheet h3 { font-size:14px; text-align:center; }
+  .sheet .hint { font-size:11px; color:#7a715e; text-align:center; }
+  .opt { display:flex; gap:10px; align-items:center; background:#fbf8f1; border:2px solid #d3c9b4; border-radius:12px; padding:9px 10px; cursor:pointer; }
+  .opt.sel { border-color:#d9902c; background:#fdf6e4; }
+  .opt.cur-tag { border-color:#8a9a5b; background:#f0f3e4; cursor:default; }
+  /* v0.5 解鎖制：選項三態 */
+  .opt.equipped { border-color:#8a9a5b; background:#f0f3e4; cursor:default; }
+  .opt.owned { border-color:#9db4d8; }
+  .opt .price { margin-left:auto; font-size:11px; font-weight:700; color:#a4552f; background:#fdf0dc;
+                border:1px solid #ecd9b8; padding:2px 8px; border-radius:10px; flex-shrink:0; white-space:nowrap; }
+  .opt .state-tag { margin-left:auto; font-size:10px; font-weight:700; color:#fff; padding:2px 8px; border-radius:8px; flex-shrink:0; white-space:nowrap; }
+  .opt .oi { font-size:24px; width:36px; text-align:center; flex-shrink:0; }
+  .opt .ot { font-weight:700; font-size:13px; }
+  .opt .od { font-size:11px; color:#6f6754; }
+  .opt .link-mech { font-size:10px; color:#a4552f; font-weight:600; }
+
+  /* 確認框 / 成功頁 / toast */
+  .confirm-box { background:#f2ede3; border-radius:14px; width:86%; padding:0 0 14px; }
+  .confirm-box p { padding:16px 18px 4px; font-size:14px; text-align:center; line-height:1.6; }
+  .confirm-box .cost { color:#a4552f; font-weight:700; }
+  .confirm-btns { display:flex; gap:12px; padding:12px 18px 0; }
+  .toast { position:absolute; top:64px; left:50%; transform:translateX(-50%); background:rgba(40,35,25,.92); color:#fff;
+           padding:8px 18px; border-radius:20px; font-size:13px; z-index:60; display:none; white-space:nowrap; }
+
+  /* ===== Upgrades 分頁 + 全域主導覽 ===== */
+  .upgrade-tabs { flex:0 0 50px; display:grid; grid-template-columns:repeat(4,1fr); gap:6px; padding:6px 9px;
+                  background:#3f3a31; border-top:1px solid #2c2924; }
+  .upgrade-tab { position:relative; border:0; border-radius:12px; background:#625a49; color:#e8dfcc;
+                 font-family:inherit; font-size:12px; font-weight:700; cursor:pointer; }
+  .upgrade-tab.active { background:#4f7fd0; color:#fff; }
+  .upgrade-tab.active::after { content:""; position:absolute; top:-5px; right:8px; width:9px; height:9px; border-radius:50%;
+                               background:#d0392e; border:2px solid #3f3a31; }
+  .global-nav { flex:0 0 56px; display:grid; grid-template-columns:repeat(5,1fr); align-items:center; background:#2f2c26;
+                border-top:1px solid #211f1b; padding:4px 10px 6px; }
+  .nav-btn { border:0; background:transparent; color:#d8d0be; font-size:20px; cursor:pointer; }
+  .nav-btn.close { width:44px; height:44px; justify-self:center; border-radius:50%; background:#d44338; color:#fff;
+                   border:3px solid #f5eee0; font-size:22px; font-weight:900; box-shadow:0 3px 0 #832b25; }
+
+  /* ===== Debug 列 ===== */
+  .debug { width:405px; max-width:96vw; background:#2c2f36; border-radius:12px; padding:10px 12px; display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+           font-family:ui-monospace,monospace; font-size:12px; color:#c8ccd4; }
+  .debug button { background:#454a54; color:#e6e9ef; border:none; border-radius:8px; padding:5px 10px; cursor:pointer; font-family:inherit; font-size:12px; }
+  .debug button:hover { background:#565c68; }
+  .debug .on { background:#3d6b45; }
+</style>
+</head>
+<body>
+
+<div class="phone" id="phone">
+  <div class="topbar">
+    <span class="lv">Lv.<span id="hud-lv"></span></span>
+    <span id="hud-class"></span>
+    <div class="cur"><span>🪙 <span id="hud-gold"></span></span><span>💎 <span id="hud-gem"></span></span></div>
+  </div>
+  <div class="page-title">職業</div>
+  <div class="main" id="main"></div>
+
+  <nav class="upgrade-tabs" aria-label="Upgrades 分頁">
+    <button class="upgrade-tab" onclick="toast('技能頁：本 demo 僅展示職業頁')">技能</button>
+    <button class="upgrade-tab" onclick="toast('寵物頁：本 demo 僅展示職業頁')">寵物</button>
+    <button class="upgrade-tab active" aria-current="page">職業</button>
+    <button class="upgrade-tab" onclick="toast('科技樹頁：本 demo 僅展示職業頁')">科技樹</button>
+  </nav>
+  <nav class="global-nav" aria-label="全域導覽">
+    <button class="nav-btn" aria-label="戰鬥" onclick="toast('全域導覽示意')">⚔️</button>
+    <button class="nav-btn" aria-label="活動" onclick="toast('全域導覽示意')">🎊</button>
+    <button class="nav-btn close" aria-label="關閉" onclick="toast('關閉按鈕示意')">×</button>
+    <button class="nav-btn" aria-label="鎖定功能" onclick="toast('功能尚未解鎖')">🔒</button>
+    <button class="nav-btn" aria-label="商店" onclick="toast('全域導覽示意')">🏪</button>
+  </nav>
+
+  <div class="overlay" id="ov-pick"></div>
+  <div class="overlay" id="ov-evolve"></div>
+  <div class="overlay" id="ov-switch"></div>
+  <div class="overlay" id="ov-switch-detail"></div>
+  <div class="overlay" id="ov-confirm"></div>
+  <div class="overlay" id="ov-success"></div>
+  <div class="sheet" id="sheet"></div>
+  <div class="toast" id="toast"></div>
+</div>
+
+<div class="debug">
+  <span>DEMO 控制</span>
+  <button onclick="dbg.lv(-15)">Lv-15</button>
+  <button onclick="dbg.lv(15)">Lv+15</button>
+  <button id="dbg-unlock" onclick="dbg.toggleUnlock()">系統解鎖：關</button>
+  <button onclick="dbg.resetClass()">回到未選職業</button>
+  <button onclick="dbg.resetAll()">全部重置</button>
+</div>
+<div class="stage-note">職業系統規格 v0.15 · Demo 從 Lv.1 未解鎖／未選職業開始 · 技能與數值皆為展示佔位 · 職業不影響裝備掉落與戰鬥角色外觀</div>
+
+<script>
+/* ================= 靜態設定（對應規格 5.1，數值皆佔位） ================= */
+const STAGE_LV = [1, 30, 60, 90, 120];        // 各階等級門檻（未定 #1）
+const EVOLVE_COST = [0, 800, 2500, 5000, 9000]; // 進化消耗金幣（未定 #3）
+const SWITCH_COST = 300;                      // 切換消耗鑽石（稀有資源，低頻大決策）
+const UNLOCK_COST = 200;                      // 解鎖被動選項消耗金幣（一次性；已解鎖選項間免費切換，v0.5）
+const STAGE_MASTERY = [20, 40, 60, 80, 100];  // 共用職業階級獎勵（只發一次，數值佔位）
+const PASSIVE_MASTERY = 10;                   // 每個被動候選首次解鎖獎勵（數值佔位）
+const MASTERY_HP = 10;                        // 每點精通增加生命（數值佔位）
+const MASTERY_ATK = 1;                        // 每點精通增加攻擊（數值佔位）
+
+const LINES = {
+  warrior: {
+    name:'先鋒', role:'生存', roleColor:'#c04a3a', resource:'怒氣', resourceColor:'#c04a3a',
+    resourceDesc:'受到傷害累積怒氣', mechIcon:'💢',
+    mechRule:'受到傷害時累積怒氣。怒氣越高，部分主動技與被動技的效果越強；滿值時可釋放強化版主動技。戰鬥結束後歸零。',
+    stages:[
+      { name:'先鋒',     emoji:'🐗', desc:'以戰意承受壓力並反擊', active:{cd:6,  icon:'💢', name:'震擊', desc:'造成180%傷害，額外獲得10點怒氣'} },
+      { name:'破陣者',   emoji:'💥', desc:'在壓力中打開突破口',   active:{cd:8,  icon:'🔥', name:'血怒爆發', desc:'造成260%傷害，怒氣越高傷害越高'} },
+      { name:'鬥魂衛士', emoji:'🦁', desc:'以鬥志守住戰線',       active:{cd:10, icon:'🌋', name:'撼地衝擊', desc:'造成320%傷害並獲得短暫減傷'} },
+      { name:'不屈統帥', emoji:'👑', desc:'將壓力轉為全隊戰意',   active:{cd:12, icon:'📣', name:'戰意號令', desc:'造成380%傷害，滿怒氣時縮短冷卻'} },
+      { name:'戰意化身', emoji:'☄️', desc:'鬥志不滅的最終形態',   active:{cd:14, icon:'☄️', name:'終極鬥魂', desc:'消耗全部怒氣，每點怒氣提高技能傷害'} },
+    ],
+    slots:[
+      { unlockStage:1, fixed:true, skill:{icon:'💢', name:'越戰越勇', desc:'受到傷害時額外獲得怒氣', tag:'固定'} },
+      { unlockStage:2, options:[
+        {icon:'🗡️', name:'嗜血', desc:'普攻附帶5%吸血', tag:'輸出'},
+        {icon:'🧱', name:'鐵壁', desc:'受傷減免8%', tag:'生存'},
+        {icon:'😡', name:'怒火中燒', desc:'怒氣獲取量+30%', tag:'機制'} ]},
+      { unlockStage:3, options:[
+        {icon:'💪', name:'蠻力', desc:'攻擊力+10%', tag:'輸出'},
+        {icon:'❤️', name:'強健', desc:'生命上限+15%', tag:'生存'},
+        {icon:'⚡', name:'怒氣迸發', desc:'怒氣滿時攻速+25%', tag:'機制'} ]},
+      { unlockStage:4, options:[
+        {icon:'💥', name:'碎甲', desc:'無視10%防禦', tag:'輸出'},
+        {icon:'🌿', name:'堅忍', desc:'低於30%生命時減傷20%', tag:'生存'},
+        {icon:'🔄', name:'怒氣回流', desc:'釋放主動技後保留20%怒氣', tag:'機制'} ]},
+      { unlockStage:5, options:[
+        {icon:'☄️', name:'毀滅', desc:'主動技傷害+25%', tag:'輸出'},
+        {icon:'⛑️', name:'不屈', desc:'致死傷害改為保留1點生命(60秒CD)', tag:'生存'},
+        {icon:'♾️', name:'永怒', desc:'怒氣不再自然衰減', tag:'機制'} ]},
+    ]
+  },
+  archer: {
+    name:'遊俠', role:'輸出', roleColor:'#3d7a46', resource:'專注', resourceColor:'#3d7a46',
+    resourceDesc:'攻擊命中時累積專注', mechIcon:'🎯',
+    mechRule:'攻擊命中時累積專注。專注的消耗方式、上限與技能連動效果仍為佔位，待後續定案。',
+    stages:[
+      { name:'遊俠',     emoji:'🦊', desc:'洞察弱點並掌握節奏', active:{cd:5,  icon:'🎯', name:'弱點標記', desc:'造成220%傷害並提高後續爆擊率'} },
+      { name:'追獵者',   emoji:'🦅', desc:'持續追蹤目標破綻',   active:{cd:7,  icon:'💨', name:'疾風追擊', desc:'快速造成3次130%傷害'} },
+      { name:'荒野行者', emoji:'🍃', desc:'善用環境發動伏擊',   active:{cd:9,  icon:'🌿', name:'群體伏擊', desc:'對全體造成3次110%傷害'} },
+      { name:'風語者',   emoji:'🌪️', desc:'將專注化為疾風',     active:{cd:11, icon:'🌪️', name:'風痕爆發', desc:'造成420%傷害並回復專注'} },
+      { name:'星界獵人', emoji:'⭐', desc:'鎖定任何距離的獵物', active:{cd:13, icon:'🌠', name:'星群狩獵', desc:'對全體造成5次100%傷害'} },
+    ],
+    slots:[
+      { unlockStage:1, fixed:true, skill:{icon:'👁️', name:'獵人直覺', desc:'命中時累積專注', tag:'固定'} },
+      { unlockStage:2, options:[
+        {icon:'🏃', name:'迅捷', desc:'攻速+10%', tag:'輸出'},
+        {icon:'👟', name:'閃避', desc:'閃避率+6%', tag:'生存'},
+        {icon:'🔍', name:'鷹眼', desc:'專注獲取+30%', tag:'機制'} ]},
+      { unlockStage:3, options:[
+        {icon:'🗡️', name:'破綻追擊', desc:'普攻無視8%防禦', tag:'輸出'},
+        {icon:'🍃', name:'風之庇護', desc:'受傷減免6%', tag:'生存'},
+        {icon:'✨', name:'凝神', desc:'滿專注時爆擊率+15%', tag:'機制'} ]},
+      { unlockStage:4, options:[
+        {icon:'🔱', name:'連鎖追擊', desc:'普攻15%機率擴散傷害', tag:'輸出'},
+        {icon:'🌿', name:'荊棘', desc:'反彈8%受到傷害', tag:'生存'},
+        {icon:'⏩', name:'心流加速', desc:'主動技冷卻-15%', tag:'機制'} ]},
+      { unlockStage:5, options:[
+        {icon:'☄️', name:'殲滅', desc:'主動技傷害+25%', tag:'輸出'},
+        {icon:'🪶', name:'輕羽', desc:'閃避後1秒內傷害+30%', tag:'生存'},
+        {icon:'♾️', name:'心流', desc:'專注上限+50', tag:'機制'} ]},
+    ]
+  },
+  mage: {
+    name:'秘術', role:'法系', roleColor:'#3a63b8', resource:'奧能', resourceColor:'#3a63b8',
+    resourceDesc:'施放技能時累積奧能', mechIcon:'💠',
+    mechRule:'施放技能時累積奧能。奧能的消耗方式、上限與技能連動效果仍為佔位，待後續定案。',
+    stages:[
+      { name:'秘術師',   emoji:'🔮', desc:'初窺能量運行規律', active:{cd:5,  icon:'🔮', name:'奧術脈衝', desc:'造成200%傷害'} },
+      { name:'元素使',   emoji:'❄️', desc:'引導多種元素能量', active:{cd:7,  icon:'❄️', name:'霜火共鳴', desc:'造成280%傷害並減速'} },
+      { name:'星詠者',   emoji:'🌌', desc:'呼應星辰增幅奧能', active:{cd:9,  icon:'🌠', name:'星辰震盪', desc:'對全體造成3次120%傷害'} },
+      { name:'虛空行者', emoji:'🌀', desc:'穿梭能量與現實之間', active:{cd:11, icon:'🌀', name:'虛空迴響', desc:'造成420%傷害並縮短下次冷卻'} },
+      { name:'奧術宗師', emoji:'💠', desc:'完全掌握奧能源流', active:{cd:13, icon:'💠', name:'奧能洪流', desc:'對全體造成5次100%傷害'} },
+    ],
+    slots:[
+      { unlockStage:1, fixed:true, skill:{icon:'🔋', name:'奧能感知', desc:'施放主動技時累積奧能', tag:'固定'} },
+      { unlockStage:2, options:[
+        {icon:'📖', name:'博學', desc:'法術傷害+10%', tag:'輸出'},
+        {icon:'🫧', name:'法盾', desc:'獲得10%生命的護盾', tag:'生存'},
+        {icon:'🔋', name:'聚能', desc:'奧能獲取+30%', tag:'機制'} ]},
+      { unlockStage:3, options:[
+        {icon:'🔥', name:'燃燒', desc:'法術附帶灼燒', tag:'輸出'},
+        {icon:'❤️', name:'體魄', desc:'生命上限+12%', tag:'生存'},
+        {icon:'💠', name:'奧能親和', desc:'滿奧能時法術傷害+20%', tag:'機制'} ]},
+      { unlockStage:4, options:[
+        {icon:'⚡', name:'雷擊', desc:'普攻15%機率連鎖閃電', tag:'輸出'},
+        {icon:'🧊', name:'寒霜護體', desc:'受擊減速攻擊者', tag:'生存'},
+        {icon:'⏳', name:'時間扭曲', desc:'主動技冷卻-15%', tag:'機制'} ]},
+      { unlockStage:5, options:[
+        {icon:'☄️', name:'湮滅', desc:'主動技傷害+25%', tag:'輸出'},
+        {icon:'🛡️', name:'大法師護盾', desc:'護盾效果+40%', tag:'生存'},
+        {icon:'♾️', name:'奧能洪流', desc:'奧能自動緩慢累積', tag:'機制'} ]},
+    ]
+  }
+};
+
+/* ================= 玩家狀態（對應規格 5.2） ================= */
+const initState = () => ({
+  unlocked:false, line:null, stage:1, level:1, gold:99999, gem:999,
+  mastery:0,
+  masteryClaims:{
+    stages:[],
+    passives:[]
+  },
+  // 各線獨立保存（規格 2.4）；v0.5 解鎖制：每槽 = { unlocked:[已購索引], equipped:索引 } 或 null（未首選）
+  choices:{
+    warrior:{},
+    archer:{}, mage:{}
+  }
+});
+let S = initState();
+
+/* ================= 工具 ================= */
+const $ = id => document.getElementById(id);
+const esc = s => s;
+let toastTimer;
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.style.display='block';
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.style.display='none',1800); }
+function hide(id){ $(id).classList.remove('show'); }
+function show(id){ $(id).classList.add('show'); }
+const OPERATION_LAYERS = ['ov-pick','ov-evolve','ov-switch','ov-switch-detail','ov-confirm','ov-success','sheet'];
+function showOnly(id){
+  bubbleSlot = null;
+  OPERATION_LAYERS.forEach(layerId => layerId === id ? show(layerId) : hide(layerId));
+}
+function hideAll(){ bubbleSlot = null; OPERATION_LAYERS.forEach(hide); }
+
+function awardStageMastery(stage){
+  const key = `${stage}`;
+  if (S.masteryClaims.stages.includes(key)) return;
+  S.masteryClaims.stages.push(key);
+  S.mastery += STAGE_MASTERY[stage-1];
+}
+function awardPassiveMastery(lineId, slotIndex, optionIndex = null){
+  const key = optionIndex === null ? `${lineId}:fixed` : `${lineId}:${slotIndex}:${optionIndex}`;
+  if (S.masteryClaims.passives.includes(key)) return;
+  S.masteryClaims.passives.push(key);
+  S.mastery += PASSIVE_MASTERY;
+}
+
+/* 主要技能卡（含右上冷卻角標），四處共用 */
+function skillCard(active){
+  return `<div class="skill-card">
+    <span class="cd-badge">⏱ ${active.cd}s</span>
+    <div class="skill-icon">${active.icon}</div>
+    <div><div class="t">${active.name}</div><div class="d">${active.desc}</div></div>
+  </div>`;
+}
+
+/* v0.5：機制一行摘要，點擊展開/收合完整規則 */
+let mechOpen = false;
+function toggleMechRow(){ mechOpen = !mechOpen; renderMain(); }
+
+/* v0.5：已選槽 bubble 快覽 */
+let bubbleSlot = null;
+function toggleSlotBubble(e, i){
+  e.stopPropagation();
+  bubbleSlot = (bubbleSlot === i) ? null : i;
+  renderMain();
+  if (bubbleSlot !== null)
+    setTimeout(()=>document.addEventListener('click', closeSlotBubble, {once:true}), 0);
+}
+function closeSlotBubble(){ if (bubbleSlot !== null){ bubbleSlot = null; renderMain(); } }
+function manageSlot(e, i){ e.stopPropagation(); bubbleSlot = null; renderMain(); openSheet(i); }
+
+function slotChoice(lineId, i){ return S.choices[lineId][i] ?? null; }  // {unlocked, equipped} | null
+function slotState(lineId, i){
+  const def = LINES[lineId].slots[i];
+  if (S.stage < def.unlockStage) return 'locked';
+  if (def.fixed) return 'fixed';
+  const c = slotChoice(lineId, i);
+  return (c === null || c.equipped === null) ? 'empty' : 'filled';
+}
+
+/* ================= HUD / 主頁 ================= */
+function renderHUD(){
+  $('hud-lv').textContent = S.level;
+  $('hud-gold').textContent = S.gold.toLocaleString();
+  $('hud-gem').textContent = S.gem.toLocaleString();
+  $('hud-class').textContent = S.line ? `${LINES[S.line].stages[S.stage-1].name}` : '未選擇職業';
+}
+
+let justUnlockedSlots = new Set();  // 進化當下新解鎖的槽，用於一次性高亮
+
+function slotHTML(lineId, i, interactive){
+  const def = LINES[lineId].slots[i];
+  const st = slotState(lineId, i);
+  const pulse = (interactive && justUnlockedSlots.has(i)) ? ' just-unlocked' : '';
+  if (st==='locked') return `<div class="slot locked"><span>🔒</span><small>${def.unlockStage}階解鎖</small></div>`;
+  if (st==='fixed'){
+    const opt = def.skill;
+    const click = interactive ? `onclick="toggleSlotBubble(event,${i})"` : '';
+    let bubble = '';
+    if (interactive && bubbleSlot === i){
+      bubble = `<div class="slot-bubble al" onclick="event.stopPropagation()">
+        <div class="bt">${opt.icon} ${opt.name} <span style="font-weight:400;color:#c9bda2">[固定]</span></div>
+        ${opt.desc}
+      </div>`;
+    }
+    return `<div class="slot fixed${pulse}" ${click}>${bubble}<span class="fixed-tag">固定</span><span>${opt.icon}</span><small>${opt.name}</small></div>`;
+  }
+  if (st==='empty'){
+    // 紅點只在主頁（互動情境）出現；選擇/進化/切換的唯讀展示不加紅點
+    const dot = interactive ? ' has-dot' : '';
+    const click = interactive ? `onclick="openSheet(${i})"` : '';
+    return `<div class="slot empty${dot}${pulse}" ${click}><span>❓</span><small>可選擇</small></div>`;
+  }
+  const c = slotChoice(lineId, i);
+  const opt = def.options[c.equipped];
+  // v0.5：已選槽點擊浮出 bubble 快覽（名稱/描述 + 管理入口），不直接進面板
+  const click = interactive ? `onclick="toggleSlotBubble(event,${i})"` : '';
+  let bubble = '';
+  if (interactive && bubbleSlot === i){
+    const total = LINES[lineId].slots.length;
+    const align = i <= 1 ? 'al' : (i >= total - 2 ? 'ar' : 'ac');
+    bubble = `<div class="slot-bubble ${align}" onclick="event.stopPropagation()">
+      <div class="bt">${opt.icon} ${opt.name} <span style="font-weight:400;color:#c9bda2">[${opt.tag}]</span></div>
+      ${opt.desc}<br><span style="color:#c9bda2;font-size:11px">本槽已解鎖 ${c.unlocked.length}/3</span>
+      <button class="btn-mini" onclick="manageSlot(event,${i})">切換 / 解鎖</button>
+    </div>`;
+  }
+  return `<div class="slot filled${pulse}" ${click}>${bubble}<span>${opt.icon}</span><small>${opt.name}</small></div>`;
+}
+
+function renderMain(){
+  renderHUD();
+  const m = $('main');
+  if (!S.line){ m.innerHTML = `<div style="flex:1"></div>`; openPick(); return; }
+  hide('ov-pick');
+  const L = LINES[S.line], st = L.stages[S.stage-1];
+  const nextGate = STAGE_LV[S.stage] ?? null;
+  const maxed = S.stage >= L.stages.length;
+  const canEvolve = !maxed && S.level >= nextGate;
+  m.innerHTML = `
+    <div class="char-area">
+      <span class="role-badge" style="background:${L.roleColor}">${L.role}</span>
+      <div class="char-emoji">${st.emoji}</div>
+      <div class="char-pedestal"></div>
+      <span class="class-pill">${st.name}</span>
+    </div>
+    <div class="info-rows">
+      <div class="info-row"><b>職業</b>${st.name}（${L.name}線 ${S.stage}階）</div>
+      <div class="info-row mech-row ${mechOpen?'open':''}" onclick="toggleMechRow()"><b>機制</b>
+        <span style="color:${L.resourceColor};font-weight:700">${L.mechIcon} ${L.resource}</span>
+        <span style="color:#8a7f66;margin-left:6px">${L.resourceDesc}</span><span class="chev">▼</span></div>
+      <div class="mech-rule">${L.mechRule}</div>
+      <div class="mastery-block">
+        <div class="mastery-head">職業精通 <strong>${S.mastery.toLocaleString()}</strong><span class="mastery-tag">全職業共用</span></div>
+        <div class="mastery-bonus"><span>生命 +${(S.mastery*MASTERY_HP).toLocaleString()}</span><span>攻擊 +${(S.mastery*MASTERY_ATK).toLocaleString()}</span></div>
+      </div>
+    </div>
+    <div><span class="sec-label">主要技能</span></div>
+    ${skillCard(st.active)}
+    <div><span class="sec-label">其他技能</span> <small style="color:#8a7f66;font-size:11px">點擊槽位查看 / 選擇</small></div>
+    <div class="slots">${L.slots.map((_,i)=>slotHTML(S.line,i,true)).join('')}</div>
+    <div class="btn-row">
+      <button class="btn blue" onclick="openSwitch()">切換職業<span class="sub">💎 ${SWITCH_COST}</span></button>
+      <button class="btn gold ${canEvolve?'has-dot':''}" ${maxed?'disabled':''} onclick="openEvolve()">
+        ${maxed?'職業階級已滿':canEvolve?'職業升階':'職業升階預覽'}<span class="sub">${maxed?'':canEvolve?`🪙 ${EVOLVE_COST[S.stage].toLocaleString()}`:`需 Lv.${nextGate}`}</span>
+      </button>
+    </div>`;
+}
+
+/* ================= 選職業（首次 / 預覽兩態） ================= */
+let pickSel = null;
+function openPick(){
+  pickSel = null;
+  renderPick();
+  showOnly('ov-pick');
+}
+function renderPick(){
+  const cards = Object.entries(LINES).map(([id,L])=>{
+    const s0 = L.stages[0];
+    return `<div class="pick-card ${pickSel===id?'sel':''}" ${S.unlocked?`onclick="pickSel='${id}';renderPick()"`:''}>
+      <span class="role-badge" style="background:${L.roleColor}">${L.role}</span>
+      <div class="avatar">${s0.emoji}</div>
+      <div class="lines">
+        <span class="nm">${s0.name}</span>
+        <span class="kv"><b>職業</b>${L.name}線</span>
+        <span class="kv"><b>技能</b>${s0.active.name} — ${s0.active.desc}</span>
+        <span class="kv"><b>機制</b>${L.resource}條（${L.resourceDesc}）</span>
+      </div>
+    </div>`;
+  }).join('');
+  $('ov-pick').innerHTML = `
+    <div class="dialog ${S.unlocked?'':'locked-veil'}">
+      <div class="dialog-title">選擇職業</div>
+      <div class="dialog-body">
+        ${S.unlocked
+          ? `<p class="pick-hint">選擇你的職業路線（首次免費，之後可付費切換）</p>`
+          : `<div class="lock-banner">🔒 職業系統將於 Lv.?? 解鎖（條件未定）— 先預覽即將登場的職業！</div>`}
+        ${cards}
+        ${S.unlocked ? `<button class="btn gold" ${pickSel?'':'disabled'} onclick="confirmPick()">就決定是你了</button>` : ''}
+      </div>
+    </div>`;
+}
+function confirmPick(){
+  S.line = pickSel; S.stage = Math.max(S.stage, 1);
+  awardStageMastery(1);
+  awardPassiveMastery(S.line, 0);
+  hide('ov-pick'); renderMain();
+  openSuccess('選擇職業成功', pickSel, 1, null);
+}
+
+/* ================= 被動：解鎖制（v0.5，底部抽屜） =================
+   首選免費（視為免費解鎖並裝備）；其餘選項付費解鎖（一次性）；已解鎖之間免費切換（零摩擦） */
+let sheetSlot = null, sheetSel = null;
+function openSheet(i){
+  bubbleSlot = null;
+  sheetSlot = i; sheetSel = null;
+  renderSheet();
+  showOnly('sheet');
+}
+function renderSheet(){
+  const L = LINES[S.line], def = L.slots[sheetSlot];
+  const c = slotChoice(S.line, sheetSlot);   // {unlocked, equipped} | null
+  const first = c === null;                  // 尚未首選
+  let rows;
+  if (first){
+    rows = def.options.map((o,idx)=>`
+      <div class="opt ${sheetSel===idx?'sel':''}" onclick="sheetSel=${idx};renderSheet()">
+        <div class="oi">${o.icon}</div>
+        <div style="flex:1"><div class="ot">${o.name} <span class="link-mech">[${o.tag}]</span></div><div class="od">${o.desc}</div></div>
+      </div>`).join('');
+  } else {
+    rows = def.options.map((o,idx)=>{
+      const equipped = idx === c.equipped;
+      const owned = c.unlocked.includes(idx);
+      const cls = equipped ? 'equipped' : owned ? 'owned' : (sheetSel===idx ? 'sel' : '');
+      const right = equipped
+        ? `<span class="state-tag" style="background:#8a9a5b">已裝備</span>`
+        : owned
+        ? `<span class="state-tag" style="background:#4f7fd0">點擊裝備</span>`
+        : `<span class="price">🪙 ${UNLOCK_COST} 解鎖</span>`;
+      const click = equipped ? '' : owned ? `onclick="equipOption(${idx})"` : `onclick="sheetSel=${idx};renderSheet()"`;
+      return `<div class="opt ${cls}" ${click}>
+        <div class="oi">${o.icon}</div>
+        <div style="flex:1"><div class="ot">${o.name} <span class="link-mech">[${o.tag}]</span></div><div class="od">${o.desc}</div></div>
+        ${right}</div>`;
+    }).join('');
+  }
+  const hint = first
+    ? '本槽位固定提供以下三個技能，首次選擇免費（可先擱置）'
+    : '已解鎖的技能可隨時免費切換；未解鎖的技能付費解鎖後永久持有';
+  const footer = first
+    ? `<button class="btn gray" onclick="hide('sheet')">先擱置</button>
+       <button class="btn gold" ${sheetSel===null?'disabled':''} onclick="confirmFirstPick()">確認選擇<span class="sub">免費</span></button>`
+    : `<button class="btn gray" onclick="hide('sheet')">關閉</button>
+       <button class="btn gold" ${sheetSel===null?'disabled':''} onclick="doUnlock()">解鎖並裝備<span class="sub">🪙 ${UNLOCK_COST}</span></button>`;
+  $('sheet').innerHTML = `
+    <h3>其他技能 · 槽位 ${sheetSlot+1}${first?'（三選一）':''}</h3>
+    <p class="hint">${hint}</p>
+    ${rows}
+    <div style="display:flex;gap:10px">${footer}</div>`;
+}
+function confirmFirstPick(){
+  S.choices[S.line][sheetSlot] = { unlocked:[sheetSel], equipped: sheetSel };
+  awardPassiveMastery(S.line, sheetSlot, sheetSel);
+  hide('sheet'); renderMain();
+  toast(`已裝備技能 · 職業精通 +${PASSIVE_MASTERY}`);
+}
+function equipOption(idx){
+  slotChoice(S.line, sheetSlot).equipped = idx;
+  sheetSel = null; renderSheet(); renderMain();
+  toast('已切換（免費）');
+}
+function doUnlock(){
+  if (S.gold < UNLOCK_COST) return toast('金幣不足');
+  S.gold -= UNLOCK_COST;
+  const c = slotChoice(S.line, sheetSlot);
+  c.unlocked.push(sheetSel); c.equipped = sheetSel;
+  awardPassiveMastery(S.line, sheetSlot, sheetSel);
+  sheetSel = null; renderSheet(); renderMain();
+  toast(`解鎖並裝備 · 職業精通 +${PASSIVE_MASTERY}`);
+}
+
+/* ================= 進化 ================= */
+let evolvePreviewSlot = null;
+let evolvePreviewOption = 0;
+
+function selectEvolvePreview(slotIndex, optionIndex){
+  evolvePreviewSlot = slotIndex;
+  evolvePreviewOption = optionIndex;
+  openEvolve(false);
+}
+
+function openEvolve(resetPreview = true){
+  const L = LINES[S.line], cur = L.stages[S.stage-1], nxt = L.stages[S.stage];
+  const gate = STAGE_LV[S.stage];
+  const canEvolve = S.level >= gate;
+  const newSlots = L.slots.map((s,i)=>({...s,i})).filter(s=>s.unlockStage===S.stage+1);
+  if (resetPreview){
+    evolvePreviewSlot = newSlots[0]?.i ?? null;
+    evolvePreviewOption = 0;
+  }
+  $('ov-evolve').innerHTML = `
+    <div class="dialog">
+      <div class="dialog-title">職業階級提升${canEvolve?'':'（預覽）'}</div>
+      <div class="dialog-body">
+        <p class="pick-hint">升至第 ${S.stage+1} 階後，三條職業線將同步解鎖第 ${S.stage+1} 階職業</p>
+        <div class="evo-pair">
+          <div class="who"><div class="e">${cur.emoji}</div><span class="n">${cur.name}</span></div>
+          <div class="evo-arrow">➜</div>
+          <div class="who"><div class="e">${nxt.emoji}</div><span class="n">${nxt.name}</span></div>
+        </div>
+        <div><span class="sec-label">主要技能變化</span></div>
+        <div class="skill-diff">
+          <div class="half old">
+            <div class="row"><div class="mini-icon">${cur.active.icon}</div>
+              <div><div class="nm">${cur.active.name}</div><div class="cd">⏱ ${cur.active.cd}s</div></div></div>
+            <div class="dd">${cur.active.desc}</div>
+          </div>
+          <div class="mid-arrow">➜</div>
+          <div class="half new">
+            <div class="row"><div class="mini-icon">${nxt.active.icon}</div>
+              <div><div class="nm">${nxt.active.name}</div><div class="cd">⏱ ${nxt.active.cd}s</div></div></div>
+            <div class="dd">${nxt.active.desc}</div>
+          </div>
+        </div>
+        ${newSlots.map(s=>{
+          const selectedIndex = evolvePreviewSlot === s.i ? evolvePreviewOption : 0;
+          const selected = s.options[selectedIndex];
+          return `<div class="evo-preview-group">
+            <div class="evo-preview-title">🔓 解鎖槽位 ${s.i+1} · 進化後於主頁三選一</div>
+            <div class="evo-preview-options">${s.options.map((o,idx)=>`
+              <button class="evo-preview-option ${idx===selectedIndex?'active':''}" onclick="selectEvolvePreview(${s.i},${idx})">
+                <div class="oi">${o.icon}</div><div class="ot">${o.name}</div>
+                <div class="link-mech">[${o.tag}]</div>
+              </button>`).join('')}</div>
+            <div class="evo-preview-detail" aria-live="polite">
+              <div class="name">${selected.icon} ${selected.name} <span class="link-mech">[${selected.tag}]</span></div>
+              <div class="desc">${selected.desc}</div>
+            </div>
+          </div>`;
+        }).join('')}
+        ${canEvolve
+          ? `<button class="btn gold" onclick="askConfirm('升階將消耗 <span class=cost>🪙 ${EVOLVE_COST[S.stage].toLocaleString()}</span><br>確定同步解鎖全職業第 ${S.stage+1} 階？', doEvolve, () => openEvolve(false))">職業升階<span class="sub">🪙 ${EVOLVE_COST[S.stage].toLocaleString()}</span></button>`
+          : `<button class="btn gold" disabled>職業升階<span class="sub">需 Lv.${gate}（目前 ${S.level}/${gate}）</span></button>`}
+      </div>
+      <button class="close-x" onclick="hide('ov-evolve')">✕</button>
+    </div>`;
+  showOnly('ov-evolve');
+}
+let pendingUnlock = new Set();  // 進化後待播放解鎖動畫的槽（回主頁時生效）
+
+function doEvolve(){
+  const cost = EVOLVE_COST[S.stage];
+  if (S.gold < cost) return toast('金幣不足');
+  S.gold -= cost;
+  const from = S.stage; S.stage += 1;
+  awardStageMastery(S.stage);
+  // 記錄本階新解鎖的槽位（unlockStage 正好等於新階段）
+  pendingUnlock = new Set(
+    LINES[S.line].slots.map((s,i)=>({s,i})).filter(x=>x.s.unlockStage===S.stage).map(x=>x.i)
+  );
+  hideAll(); justUnlockedSlots = new Set(); renderMain();  // 成功頁背後的主頁不帶動畫
+  openSuccess('職業升階成功', S.line, S.stage, from);
+}
+
+/* ================= 切換職業 ================= */
+let switchTarget = null;
+let switchPreviewSlot = null;
+let switchPreviewOption = 0;
+function openSwitch(){
+  const rows = Object.entries(LINES).map(([id,L])=>{
+    const stages = L.stages.map((st,i)=>`
+      <div class="st ${i+1>S.stage?'future':''}"><div class="e">${st.emoji}</div><div class="lv">${i+1}階 Lv.${STAGE_LV[i]}</div></div>
+      ${i<L.stages.length-1?'<div class="arr">➜</div>':''}`).join('');
+    return `<div class="line-row ${id===S.line?'current':''}" ${id===S.line?'':`onclick="openSwitchDetail('${id}')"`}>
+      <div class="hd">${L.name}線 ${id===S.line?'<span class="tag">當前</span>':''}
+        <span style="margin-left:auto;font-size:10px;color:#fff;background:${L.roleColor};padding:1px 8px;border-radius:8px">${L.role}</span></div>
+      <div class="line-stages">${stages}</div>
+    </div>`;
+  }).join('');
+  $('ov-switch').innerHTML = `
+    <div class="dialog">
+      <div class="dialog-title">切換職業</div>
+      <div class="dialog-body">
+        <p class="pick-hint">職業階級為全職業共用，目前第 ${S.stage} 階 · 各線被動選擇獨立保存</p>
+        ${rows}
+      </div>
+      <button class="close-x" onclick="hide('ov-switch')">✕</button>
+    </div>`;
+  showOnly('ov-switch');
+}
+function switchSlotHTML(lineId, i){
+  const def = LINES[lineId].slots[i];
+  const st = slotState(lineId, i);
+  const active = switchPreviewSlot === i ? ' preview-active' : '';
+  if (st === 'locked') return `<div class="slot locked"><span>🔒</span><small>${def.unlockStage}階解鎖</small></div>`;
+  if (st === 'fixed'){
+    const opt = def.skill;
+    return `<div class="slot fixed previewable${active}" onclick="selectSwitchPreviewSlot(${i})"><span class="fixed-tag">固定</span><span>${opt.icon}</span><small>${opt.name}</small></div>`;
+  }
+  if (st === 'empty') return `<div class="slot empty previewable${active}" onclick="selectSwitchPreviewSlot(${i})"><span>❓</span><small>待選 · 3 選 1</small></div>`;
+  const c = slotChoice(lineId, i);
+  const opt = def.options[c.equipped];
+  return `<div class="slot filled previewable${active}" onclick="selectSwitchPreviewSlot(${i})"><span>${opt.icon}</span><small>${opt.name}</small></div>`;
+}
+function switchPreviewHTML(lineId){
+  if (switchPreviewSlot === null){
+    return `<div class="switch-preview placeholder">點擊技能槽查看三選一</div>`;
+  }
+  const def = LINES[lineId].slots[switchPreviewSlot];
+  if (def.fixed){
+    const opt = def.skill;
+    return `<div class="switch-preview">
+      <div class="evo-preview-title">槽位 ${switchPreviewSlot+1} · 固定被動</div>
+      <div class="evo-preview-detail"><div class="name">${opt.icon} ${opt.name}　[固定]</div><div class="desc">${opt.desc}</div></div>
+      <div class="switch-preview-note">僅供預覽 · 切換後可於職業主頁管理</div>
+    </div>`;
+  }
+  const selected = def.options[switchPreviewOption];
+  return `<div class="switch-preview">
+    <div class="evo-preview-title">槽位 ${switchPreviewSlot+1} · 三選一候選</div>
+    <div class="evo-preview-options">${def.options.map((opt,index)=>`
+      <button class="evo-preview-option ${index===switchPreviewOption?'active':''}" onclick="selectSwitchPreviewOption(${index})">
+        <div class="oi">${opt.icon}</div><div class="ot">${opt.name}</div><div class="link-mech">[${opt.tag}]</div>
+      </button>`).join('')}</div>
+    <div class="evo-preview-detail"><div class="name">${selected.icon} ${selected.name}　[${selected.tag}]</div><div class="desc">${selected.desc}</div></div>
+    <div class="switch-preview-note">僅供預覽 · 切換後可於職業主頁選擇或管理</div>
+  </div>`;
+}
+function selectSwitchPreviewSlot(i){
+  if (!switchTarget || slotState(switchTarget, i) === 'locked') return;
+  switchPreviewSlot = i;
+  const c = slotChoice(switchTarget, i);
+  switchPreviewOption = c?.equipped ?? 0;
+  renderSwitchDetail();
+}
+function selectSwitchPreviewOption(index){
+  const def = LINES[switchTarget]?.slots[switchPreviewSlot];
+  if (!def?.options?.[index]) return;
+  switchPreviewOption = index;
+  renderSwitchDetail();
+}
+function renderSwitchDetail(){
+  const id = switchTarget;
+  const cur = LINES[S.line].stages[S.stage-1];
+  const L = LINES[id], tgt = L.stages[S.stage-1];
+  $('ov-switch-detail').innerHTML = `
+    <div class="dialog">
+      <div class="dialog-title">切換職業</div>
+      <div class="dialog-body">
+        <div class="evo-pair">
+          <div class="who"><div class="e">${cur.emoji}</div><span class="n">${cur.name}</span></div>
+          <div class="evo-arrow">➜</div>
+          <div class="who"><div class="e">${tgt.emoji}</div><span class="n">${tgt.name}</span></div>
+        </div>
+        <div class="switch-mech"><span class="label">專屬機制</span><strong style="color:${L.resourceColor}">${L.mechIcon} ${L.resource}</strong><span>${L.resourceDesc}</span></div>
+        <div><span class="sec-label">主要技能</span></div>
+        ${skillCard(tgt.active)}
+        <div><span class="sec-label">其他技能</span> <small style="color:#8a7f66;font-size:11px">目前配置 · 點擊技能槽查看三選一</small></div>
+        <div class="slots switch-slots">${L.slots.map((_,i)=>switchSlotHTML(id,i)).join('')}</div>
+        ${switchPreviewHTML(id)}
+        <button class="btn blue" onclick="askConfirm('切換將消耗 <span class=cost>💎 ${SWITCH_COST}</span><br>確定切換為「${tgt.name}」？', doSwitch, () => openSwitchDetail(switchTarget, false))">切換職業</button>
+      </div>
+      <button class="close-x" aria-label="回到職業列表" onclick="openSwitch()">←</button>
+    </div>`;
+}
+function openSwitchDetail(id, resetPreview = true){
+  switchTarget = id;
+  if (resetPreview){ switchPreviewSlot = null; switchPreviewOption = 0; }
+  renderSwitchDetail();
+  showOnly('ov-switch-detail');
+}
+function doSwitch(){
+  if (S.gem < SWITCH_COST) return toast('鑽石不足');
+  S.gem -= SWITCH_COST;
+  const fromLine = S.line;
+  S.line = switchTarget;
+  hideAll(); renderMain();
+  openSuccess('切換職業成功', S.line, S.stage, null, fromLine);
+}
+
+/* ================= 通用確認框 / 成功頁 ================= */
+let confirmCb = null, cancelCb = null;
+function askConfirm(html, cb, onCancel = null){
+  confirmCb = cb;
+  cancelCb = onCancel;
+  $('ov-confirm').innerHTML = `
+    <div class="confirm-box">
+      <div class="dialog-title" style="border-radius:14px 14px 0 0">提示</div>
+      <p>${html}</p>
+      <div class="confirm-btns">
+        <button class="btn" style="background:#c04a3a" onclick="cancelConfirm()">取消</button>
+        <button class="btn blue" onclick="acceptConfirm()">確認</button>
+      </div>
+    </div>`;
+  showOnly('ov-confirm');
+}
+function cancelConfirm(){
+  const cb = cancelCb;
+  confirmCb = null; cancelCb = null;
+  hide('ov-confirm');
+  if (cb) cb();
+}
+function acceptConfirm(){
+  const cb = confirmCb;
+  confirmCb = null; cancelCb = null;
+  hide('ov-confirm');
+  if (cb) cb();
+}
+function openSuccess(title, lineId, stage, fromStage, fromLine){
+  const L = LINES[lineId], st = L.stages[stage-1];
+  const fromHTML = fromStage
+    ? `<div class="who"><div class="e">${L.stages[fromStage-1].emoji}</div><span class="n">${L.stages[fromStage-1].name}</span></div><div class="evo-arrow">➜</div>`
+    : fromLine
+    ? `<div class="who"><div class="e">${LINES[fromLine].stages[stage-1].emoji}</div><span class="n">${LINES[fromLine].stages[stage-1].name}</span></div><div class="evo-arrow">➜</div>`
+    : '';
+  $('ov-success').innerHTML = `
+    <div class="dialog">
+      <div class="dialog-title">✨ ${title} ✨</div>
+      <div class="dialog-body">
+        <div class="evo-pair glow">${fromHTML}
+          <div class="who"><div class="e">${st.emoji}</div><span class="n">${st.name}</span></div></div>
+        <div><span class="sec-label">主要技能</span></div>
+        ${skillCard(st.active)}
+        <div><span class="sec-label">其他技能</span></div>
+        <div class="slots">${L.slots.map((_,i)=>slotHTML(lineId,i,false)).join('')}</div>
+        <button class="btn gold" onclick="closeSuccess()">確定</button>
+      </div>
+    </div>`;
+  showOnly('ov-success');
+}
+function closeSuccess(){
+  hide('ov-success');
+  if (pendingUnlock.size){
+    justUnlockedSlots = pendingUnlock;
+    pendingUnlock = new Set();
+    renderMain();
+    setTimeout(()=>{ justUnlockedSlots = new Set(); renderMain(); }, 1500);  // 動畫播畢後清除
+  } else {
+    renderMain();
+  }
+}
+
+/* ================= Debug ================= */
+const dbg = {
+  lv(d){ S.level = Math.max(1, S.level + d); renderMain(); toast(`等級 → ${S.level}`); },
+  toggleUnlock(){ S.unlocked = !S.unlocked; $('dbg-unlock').textContent = `系統解鎖：${S.unlocked?'開':'關'}`;
+    $('dbg-unlock').classList.toggle('on', S.unlocked); if(!S.line) renderPick(); },
+  resetClass(){ S.line = null; hideAll(); renderMain(); },
+  resetAll(){ S = initState(); hideAll(); $('dbg-unlock').textContent='系統解鎖：關'; $('dbg-unlock').classList.remove('on'); renderMain(); toast('已重置'); }
+};
+
+/* ================= Prototype 自動截圖情境 ================= */
+function applyCaptureScene(){
+  const scene = new URLSearchParams(location.search).get('capture');
+  if (!scene){ renderMain(); return; }
+
+  document.body.classList.add('capture-mode');
+  S = initState();
+  S.unlocked = true;
+  S.line = 'warrior';
+  S.stage = 3;
+  S.level = 65;
+  S.mastery = 245;
+  S.choices.warrior[1] = { unlocked:[0,1], equipped:0 };
+  S.choices.warrior[2] = { unlocked:[2], equipped:2 };
+  hideAll();
+  renderMain();
+
+  if (scene === 'evolve') openEvolve();
+  if (scene === 'passive'){
+    S.choices.warrior[1] = null;
+    renderMain();
+    openSheet(1);
+  }
+  if (scene === 'switch') openSwitch();
+  if (scene === 'switch-detail'){
+    openSwitchDetail('archer');
+    selectSwitchPreviewSlot(1);
+  }
+}
+
+applyCaptureScene();
+</script>
+</body>
+</html>
