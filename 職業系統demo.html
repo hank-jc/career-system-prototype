@@ -20,12 +20,16 @@
   .phone { width:405px; max-width:96vw; aspect-ratio:9 / 16; background:#f2ede3; border-radius:26px;
            box-shadow:0 12px 40px rgba(0,0,0,.5); overflow:hidden; position:relative; display:flex; flex-direction:column; }
 
-  /* ===== 頁首：頁名獨立，資源左右分置，中央只顯示玩家等級 ===== */
-  .topbar { flex:0 0 28px; background:#f2ede3; color:#2d2a24; padding:3px 12px 5px; display:grid;
+  /* ===== 頁首：頁名獨立，資源左右分置，中央顯示玩家等級與經驗 ===== */
+  .topbar { flex:0 0 40px; background:#f2ede3; color:#2d2a24; padding:3px 12px 5px; display:grid;
             grid-template-columns:1fr auto 1fr; align-items:center; gap:8px; font-size:11px; border-bottom:1px solid #ddd4c1; }
   .top-resource { justify-self:start; min-width:82px; background:#4a4438; color:#f2ede3; padding:3px 9px; border-radius:11px; font-weight:700; }
   .top-resource.right { justify-self:end; text-align:right; }
-  .player-level { color:#746b59; font-size:10px; font-weight:800; white-space:nowrap; }
+  .player-progress { width:92px; display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .player-level { color:#5b5344; font-size:10px; line-height:1; font-weight:900; white-space:nowrap; }
+  .xp-track { position:relative; width:92px; height:11px; overflow:hidden; border:1px solid #9f947d; border-radius:6px; background:#d8cfbd; }
+  .xp-fill { height:100%; background:linear-gradient(90deg,#69a451,#8ac66d); border-radius:5px; }
+  .xp-text { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:7px; line-height:1; font-weight:900; text-shadow:0 1px 2px #3f5634; }
   .page-title { flex:0 0 36px; display:flex; align-items:center; justify-content:center; background:#f2ede3;
                 font-size:20px; font-weight:900; letter-spacing:3px; color:#302b24; border-bottom:1px solid #ddd4c1; }
 
@@ -45,17 +49,6 @@
                background:#faf6ea; border-bottom:1px solid #eee5d2; }
   .mech-row.open + .mech-rule { display:block; }
 
-  /* v0.5：已選槽 bubble 快覽（點槽位原地浮出說明 + 管理入口） */
-  .slot-bubble { position:absolute; bottom:calc(100% + 10px); width:216px; background:#4a4438; color:#f2ede3;
-                 border-radius:12px; padding:11px 12px; font-size:12px; line-height:1.55; text-align:left;
-                 box-shadow:0 6px 18px rgba(0,0,0,.35); z-index:30; cursor:default; }
-  .slot-bubble::after { content:""; position:absolute; top:100%; border:7px solid transparent; border-top-color:#4a4438; }
-  .slot-bubble.al { left:-6px; } .slot-bubble.al::after { left:24px; }
-  .slot-bubble.ac { left:50%; transform:translateX(-50%); } .slot-bubble.ac::after { left:50%; margin-left:-7px; }
-  .slot-bubble.ar { right:-6px; } .slot-bubble.ar::after { right:24px; }
-  .slot-bubble .bt { font-weight:700; color:#f7d9a0; margin-bottom:3px; font-size:12px; }
-  .slot-bubble .btn-mini { display:block; width:100%; margin-top:8px; padding:7px 0; border:none; border-radius:9px;
-                 background:#4f7fd0; color:#fff; font-weight:700; font-size:12px; cursor:pointer; font-family:inherit; }
   .rage-label { font-size:11px; color:#7a715e; margin-bottom:3px; }
   .rage-bar { height:8px; background:#d3c9b4; border-radius:4px; overflow:hidden; }
   .rage-fill { height:100%; width:45%; border-radius:4px; }
@@ -65,10 +58,10 @@
   .info-row:last-child { border-bottom:none; }
   .info-row b { width:44px; color:#8a7f66; font-weight:600; flex-shrink:0; }
   .sec-label { display:inline-block; background:#5b5344; color:#f2ede3; font-size:10px; font-weight:700; padding:2px 12px; border-radius:0 10px 10px 0; margin-left:-12px; }
-  .skill-card { background:#fbf8f1; border:2px solid #d3c9b4; border-radius:11px; padding:7px 9px; display:flex; gap:8px; align-items:center; position:relative; }
+  .skill-card { background:#fbf8f1; border:2px solid #d3c9b4; border-radius:11px; padding:8px 9px; display:flex; gap:8px; align-items:flex-start; position:relative; }
   .skill-icon { width:38px; height:38px; border-radius:9px; background:#e7e0d0; border:2px solid #cfc4ab; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
   .skill-card .t { font-weight:700; font-size:12px; }
-  .skill-card .d { font-size:10px; color:#6f6754; margin-top:1px; padding-right:48px; }
+  .skill-card .d { font-size:10px; color:#6f6754; margin-top:2px; padding-right:0; line-height:1.35; }
   .cd-badge { position:absolute; top:6px; right:8px; display:flex; align-items:center; gap:3px; font-size:9px; font-weight:700;
               color:#4f7fd0; background:#e8effa; border:1px solid #c5d6f0; padding:2px 8px; border-radius:10px; }
   /* 進化頁：主要技能 舊→新 對比 */
@@ -166,15 +159,6 @@
   .evo-pair .who .e { font-size:42px; }
   .evo-pair .who .n { font-size:12px; font-weight:700; background:#4a4438; color:#f2ede3; padding:2px 10px; border-radius:10px; margin-top:4px; display:inline-block; }
   .evo-arrow { font-size:26px; color:#d9902c; }
-  .glow { animation:pop .5s ease; }
-  .slot.just-unlocked { animation:unlockPulse 1.4s ease; }
-  @keyframes unlockPulse {
-    0%   { transform:scale(.4); opacity:0; box-shadow:0 0 0 0 rgba(217,144,44,.9); border-color:#d9902c; }
-    35%  { transform:scale(1.12); opacity:1; box-shadow:0 0 14px 4px rgba(217,144,44,.8); border-color:#d9902c; }
-    70%  { transform:scale(1); box-shadow:0 0 8px 2px rgba(217,144,44,.5); border-color:#d9902c; }
-    100% { transform:scale(1); box-shadow:0 0 0 0 rgba(217,144,44,0); }
-  }
-  @keyframes pop { 0%{transform:scale(.6);opacity:0} 100%{transform:scale(1);opacity:1} }
 
   /* 切換職業列表 */
   .line-row { background:#fbf8f1; border:2px solid #d3c9b4; border-radius:12px; padding:8px 10px; cursor:pointer; }
@@ -244,6 +228,87 @@
   .debug button { background:#454a54; color:#e6e9ef; border:none; border-radius:8px; padding:5px 10px; cursor:pointer; font-family:inherit; font-size:12px; }
   .debug button:hover { background:#565c68; }
   .debug .on { background:#3d6b45; }
+
+  /* ===== v0.19 資訊型職業卡 ===== */
+  .career-card-grid { gap:7px; }
+  .career-select-card { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:stretch; gap:7px; padding:9px; }
+  .career-pick-info { min-width:0; display:flex; flex-direction:column; justify-content:center; gap:5px; padding:7px 8px; border:2px solid #d3c9b4; border-radius:10px; background:rgba(251,248,241,.82); }
+  .career-pick-name { font-size:17px; line-height:1.1; font-weight:900; color:#40392e; }
+  .career-pick-skill { display:grid; grid-template-columns:34px minmax(0,1fr); gap:6px; align-items:start; }
+  .career-pick-skill .mini-label { background:#5b5344; color:#fff; border-radius:7px; padding:2px 4px; text-align:center; font-size:9px; font-weight:800; }
+  .career-pick-skill .skill-name { font-size:11px; line-height:1.25; font-weight:800; }
+  .career-pick-skill .skill-desc { margin-top:2px; color:#766d5b; font-size:9px; line-height:1.3; }
+  .career-pick-art { min-width:0; display:flex; align-items:center; justify-content:center; padding:14px 4px 0; border:2px solid #d3c9b4; border-radius:10px; background:rgba(231,224,208,.78); font-size:58px; line-height:1; filter:drop-shadow(0 4px 3px rgba(0,0,0,.16)); }
+  .career-role-tag { position:absolute; z-index:2; top:7px; right:7px; padding:2px 8px; border-radius:9px; color:#fff; font-size:9px; font-weight:900; }
+
+  /* ===== v0.19 職業主頁：角色＋主動技、Z 形被動路徑 ===== */
+  .career-summary-grid { flex:0 0 139px; min-height:0; display:grid; grid-template-columns:138px minmax(0,1fr); gap:8px; }
+  .career-summary-hero { position:relative; overflow:hidden; display:flex; flex-direction:column; align-items:center; justify-content:center;
+                         background:#e7e0d0; border:2px solid #d3c9b4; border-radius:14px; }
+  .career-summary-hero .char-emoji { font-size:64px; }
+  .career-summary-hero .char-pedestal { margin-bottom:2px; }
+  .career-summary-hero .class-pill { font-size:12px; padding:2px 12px; }
+  .career-summary-skill { min-width:0; display:flex; flex-direction:column; gap:5px; }
+  .career-summary-skill .summary-label { color:#5b5344; background:#fbf8f1; border:2px solid #d3c9b4; border-radius:9px; font-size:11px; font-weight:900; padding:4px 8px; }
+  .career-summary-skill .skill-card { flex:1; min-height:0; align-items:flex-start; flex-direction:row; justify-content:flex-start; gap:8px; padding:9px; }
+  .career-summary-skill .skill-card .d { padding-right:0; line-height:1.35; }
+  .passive-section { flex:1; min-height:0; display:flex; flex-direction:column; gap:5px; }
+  .passive-heading { display:flex; align-items:center; gap:6px; color:#5b5344; background:#fbf8f1; border:2px solid #d3c9b4; border-radius:9px; padding:4px 8px; font-size:11px; font-weight:900; }
+  .passive-heading small { color:#8a7f66; font-size:9px; font-weight:600; }
+  .passive-star-grid { position:relative; flex:1; min-height:0; }
+  .passive-star-lines { position:absolute; z-index:1; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; }
+  .passive-star-lines polyline { fill:none; stroke:#c09a48; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; opacity:.72; }
+  .star-node { position:absolute; z-index:2; width:82px; height:66px; transform:translate(-50%,-50%); }
+  .star-node.p0 { left:50%; top:15%; }
+  .star-node.p1 { left:80%; top:43%; }
+  .star-node.p2 { left:69%; top:82%; }
+  .star-node.p3 { left:31%; top:82%; }
+  .star-node.p4 { left:20%; top:43%; }
+  .passive-star-grid .slot { width:100%; height:100%; aspect-ratio:auto; font-size:22px; box-shadow:0 3px 0 rgba(83,72,50,.12); }
+  .passive-star-grid .slot small { max-width:70px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:9px; }
+  .slot.newly-opened { animation:newSlotOutline .8s ease; }
+  @keyframes newSlotOutline {
+    0%,100% { box-shadow:0 3px 0 rgba(83,72,50,.12); }
+    30%,75% { border-color:#d9902c; box-shadow:0 0 0 4px rgba(217,144,44,.58),0 3px 0 rgba(83,72,50,.12); }
+  }
+
+  /* ===== v0.19 升階與切換預覽 ===== */
+  .dialog.compact { max-height:calc(100% - 8px); }
+  .dialog.compact .dialog-body { gap:7px; padding:9px 11px 7px; }
+  .evolve-route { display:flex; align-items:center; gap:0; overflow-x:auto; padding:7px 8px 8px; scrollbar-width:none; overscroll-behavior-x:contain; }
+  .evolve-route::-webkit-scrollbar { display:none; }
+  .route-stage { flex:0 0 86px; min-width:0; padding:3px 2px; text-align:center; position:relative; }
+  .route-stage .route-art { width:58px; height:58px; margin:0 auto; display:flex; align-items:center; justify-content:center; font-size:46px; line-height:1; border-radius:50%; }
+  .route-stage.next .route-art { background:#f3d49d; box-shadow:0 0 0 3px #d9902c; }
+  .route-stage.future .route-art { filter:grayscale(1) brightness(0); opacity:.25; }
+  .route-stage .route-name { margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:10px; font-weight:800; }
+  .route-stage .route-lv { color:#8a7f66; font-size:8px; }
+  .route-arrow { flex:0 0 28px; color:#d9902c; text-align:center; font-size:24px; font-weight:900; }
+  .preview-section-title { color:#5b5344; font-size:11px; font-weight:900; }
+  .unlock-preview-list { display:flex; flex-direction:column; gap:5px; }
+  .unlock-preview-option { min-height:51px; display:grid; grid-template-columns:34px minmax(0,1fr); align-items:center; gap:7px; padding:6px 8px;
+                           background:#fbf8f1; border:2px solid #d3c9b4; border-radius:10px; }
+  .unlock-preview-option .oi { font-size:23px; text-align:center; }
+  .unlock-preview-option .ot { font-size:11px; font-weight:800; }
+  .unlock-preview-option .od { color:#6f6754; font-size:9px; line-height:1.25; }
+  .unlock-preview-option .link-mech { color:#a4552f; font-size:9px; font-weight:700; }
+  .switch-comparison { display:grid; grid-template-columns:1fr 28px 1fr; align-items:center; gap:6px; padding:3px 4px; }
+  .switch-person { min-width:0; text-align:center; }
+  .switch-person .art { font-size:48px; line-height:1; }
+  .switch-person.target .art { width:62px; height:62px; margin:0 auto; display:flex; align-items:center; justify-content:center; border-radius:50%; background:#f3d49d; box-shadow:0 0 0 3px #d9902c; }
+  .switch-person .name { display:inline-block; margin-top:3px; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+                         padding:2px 9px; border-radius:9px; background:#4a4438; color:#fff; font-size:10px; font-weight:800; }
+  .switch-arrow { color:#d9902c; text-align:center; font-size:23px; font-weight:900; }
+  .switch-passive-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:5px; }
+  .switch-passive-grid .slot { width:100%; aspect-ratio:1; cursor:default; }
+  .parallel-actions { display:flex; gap:8px; }
+  .parallel-actions .btn { min-width:0; font-size:13px; }
+  .btn.red { background:#c04a3a; }
+
+  /* 被動選擇彈窗標題列 */
+  .passive-dialog { padding:0 0 10px; gap:0; }
+  .passive-dialog-title { flex:0 0 auto; background:#4a4438; color:#f2ede3; text-align:center; font-size:15px; font-weight:900; padding:9px 10px; }
+  .passive-dialog-body { min-height:0; overflow:auto; display:flex; flex-direction:column; gap:7px; padding:10px 12px 0; }
 </style>
 </head>
 <body>
@@ -252,7 +317,13 @@
   <div class="page-title">職業</div>
   <div class="topbar">
     <span class="top-resource">🪙 <span id="hud-gold"></span></span>
-    <span class="player-level">玩家 Lv.<span id="hud-lv"></span></span>
+    <div class="player-progress">
+      <span class="player-level">Lv.<span id="hud-lv"></span></span>
+      <div class="xp-track" aria-label="玩家經驗值">
+        <div class="xp-fill" id="hud-xp-fill"></div>
+        <span class="xp-text" id="hud-xp"></span>
+      </div>
+    </div>
     <span class="top-resource right">💎 <span id="hud-gem"></span></span>
   </div>
   <div class="main" id="main"></div>
@@ -272,7 +343,7 @@
   </nav>
 
   <div class="overlay" id="ov-switch"></div>
-  <div class="overlay" id="ov-confirm"></div>
+  <div class="overlay" id="ov-evolve"></div>
   <div class="overlay passive-modal" id="sheet" role="dialog" aria-modal="true" aria-label="管理被動技能"></div>
   <div class="toast" id="toast"></div>
 </div>
@@ -286,14 +357,14 @@
   <button onclick="dbg.resetClass()">回到未選職業</button>
   <button onclick="dbg.resetAll()">全部重置</button>
 </div>
-<div class="stage-note">職業系統規格 v0.17 · Lv.2 預覽／Lv.5 選擇 · 技能與數值皆為展示佔位 · 職業不影響裝備掉落與戰鬥角色外觀</div>
+<div class="stage-note">職業系統規格 v0.23 · 四階職業美術／五個被動槽 · 技能與數值皆為展示佔位 · 職業不影響裝備掉落與戰鬥角色外觀</div>
 
 <script>
 /* ================= 靜態設定（對應規格 5.1，數值皆佔位） ================= */
 const CAREER_PREVIEW_LV = 2;
 const CAREER_UNLOCK_LV = 5;
-const STAGE_LV = [5, 30, 60, 90, 120];        // prototype 階級門檻
-const EVOLVE_COST = [0, 800, 2500, 5000, 9000]; // 進化消耗金幣（未定 #3）
+const STAGE_LV = [5, 30, 60, 90];        // 四階職業美術門檻
+const EVOLVE_COST = [0, 800, 2500, 5000]; // 進化消耗金幣（未定 #3）
 const UNLOCK_COST = 200;                      // 每槽共用解鎖次數 +1 的一次性金幣消耗（數值佔位）
 
 const LINES = {
@@ -306,25 +377,28 @@ const LINES = {
       { name:'破陣者',   emoji:'💥', desc:'在壓力中打開突破口',   active:{cd:8,  icon:'🔥', name:'血怒爆發', desc:'造成260%傷害，怒氣越高傷害越高'} },
       { name:'鬥魂衛士', emoji:'🦁', desc:'以鬥志守住戰線',       active:{cd:10, icon:'🌋', name:'撼地衝擊', desc:'造成320%傷害並獲得短暫減傷'} },
       { name:'不屈統帥', emoji:'👑', desc:'將壓力轉為全隊戰意',   active:{cd:12, icon:'📣', name:'戰意號令', desc:'造成380%傷害，滿怒氣時縮短冷卻'} },
-      { name:'戰意化身', emoji:'☄️', desc:'鬥志不滅的最終形態',   active:{cd:14, icon:'☄️', name:'終極鬥魂', desc:'消耗全部怒氣，每點怒氣提高技能傷害'} },
     ],
     slots:[
-      { unlockStage:2, options:[
+      { unlockStage:1, options:[
         {icon:'🗡️', name:'嗜血', desc:'普攻附帶5%吸血', tag:'輸出'},
         {icon:'🧱', name:'鐵壁', desc:'受傷減免8%', tag:'生存'},
         {icon:'😡', name:'怒火中燒', desc:'怒氣獲取量+30%', tag:'機制'} ]},
-      { unlockStage:3, options:[
+      { unlockStage:2, options:[
         {icon:'💪', name:'蠻力', desc:'攻擊力+10%', tag:'輸出'},
         {icon:'❤️', name:'強健', desc:'生命上限+15%', tag:'生存'},
         {icon:'⚡', name:'怒氣迸發', desc:'怒氣滿時攻速+25%', tag:'機制'} ]},
-      { unlockStage:4, options:[
+      { unlockStage:3, options:[
         {icon:'💥', name:'碎甲', desc:'無視10%防禦', tag:'輸出'},
         {icon:'🌿', name:'堅忍', desc:'低於30%生命時減傷20%', tag:'生存'},
         {icon:'🔄', name:'怒氣回流', desc:'釋放主動技後保留20%怒氣', tag:'機制'} ]},
-      { unlockStage:5, options:[
+      { unlockStage:4, options:[
         {icon:'☄️', name:'毀滅', desc:'主動技傷害+25%', tag:'輸出'},
         {icon:'⛑️', name:'不屈', desc:'致死傷害改為保留1點生命(60秒CD)', tag:'生存'},
         {icon:'♾️', name:'永怒', desc:'怒氣不再自然衰減', tag:'機制'} ]},
+      { unlockStage:5, options:[
+        {icon:'🩸', name:'終戰', desc:'低生命時提高最終傷害', tag:'輸出'},
+        {icon:'🏰', name:'鋼鐵意志', desc:'受到重擊時獲得護盾', tag:'生存'},
+        {icon:'🔥', name:'無盡戰意', desc:'怒氣滿值效果延長', tag:'機制'} ]},
     ]
   },
   archer: {
@@ -336,25 +410,28 @@ const LINES = {
       { name:'追獵者',   emoji:'🦅', desc:'持續追蹤目標破綻',   active:{cd:7,  icon:'💨', name:'疾風追擊', desc:'快速造成3次130%傷害'} },
       { name:'荒野行者', emoji:'🍃', desc:'善用環境發動伏擊',   active:{cd:9,  icon:'🌿', name:'群體伏擊', desc:'對全體造成3次110%傷害'} },
       { name:'風語者',   emoji:'🌪️', desc:'將專注化為疾風',     active:{cd:11, icon:'🌪️', name:'風痕爆發', desc:'造成420%傷害並回復專注'} },
-      { name:'星界獵人', emoji:'⭐', desc:'鎖定任何距離的獵物', active:{cd:13, icon:'🌠', name:'星群狩獵', desc:'對全體造成5次100%傷害'} },
     ],
     slots:[
-      { unlockStage:2, options:[
+      { unlockStage:1, options:[
         {icon:'🏃', name:'迅捷', desc:'攻速+10%', tag:'輸出'},
         {icon:'👟', name:'閃避', desc:'閃避率+6%', tag:'生存'},
         {icon:'🔍', name:'鷹眼', desc:'專注獲取+30%', tag:'機制'} ]},
-      { unlockStage:3, options:[
+      { unlockStage:2, options:[
         {icon:'🗡️', name:'破綻追擊', desc:'普攻無視8%防禦', tag:'輸出'},
         {icon:'🍃', name:'風之庇護', desc:'受傷減免6%', tag:'生存'},
         {icon:'✨', name:'凝神', desc:'滿專注時爆擊率+15%', tag:'機制'} ]},
-      { unlockStage:4, options:[
+      { unlockStage:3, options:[
         {icon:'🔱', name:'連鎖追擊', desc:'普攻15%機率擴散傷害', tag:'輸出'},
         {icon:'🌿', name:'荊棘', desc:'反彈8%受到傷害', tag:'生存'},
         {icon:'⏩', name:'心流加速', desc:'主動技冷卻-15%', tag:'機制'} ]},
-      { unlockStage:5, options:[
+      { unlockStage:4, options:[
         {icon:'☄️', name:'殲滅', desc:'主動技傷害+25%', tag:'輸出'},
         {icon:'🪶', name:'輕羽', desc:'閃避後1秒內傷害+30%', tag:'生存'},
         {icon:'♾️', name:'心流', desc:'專注上限+50', tag:'機制'} ]},
+      { unlockStage:5, options:[
+        {icon:'🎯', name:'絕對命中', desc:'對標記目標提高傷害', tag:'輸出'},
+        {icon:'🌫️', name:'無影', desc:'閃避後短暫降低所受傷害', tag:'生存'},
+        {icon:'💫', name:'極限專注', desc:'專注滿值效果延長', tag:'機制'} ]},
     ]
   },
   mage: {
@@ -366,34 +443,37 @@ const LINES = {
       { name:'元素使',   emoji:'❄️', desc:'引導多種元素能量', active:{cd:7,  icon:'❄️', name:'霜火共鳴', desc:'造成280%傷害並減速'} },
       { name:'星詠者',   emoji:'🌌', desc:'呼應星辰增幅奧能', active:{cd:9,  icon:'🌠', name:'星辰震盪', desc:'對全體造成3次120%傷害'} },
       { name:'虛空行者', emoji:'🌀', desc:'穿梭能量與現實之間', active:{cd:11, icon:'🌀', name:'虛空迴響', desc:'造成420%傷害並縮短下次冷卻'} },
-      { name:'奧術宗師', emoji:'💠', desc:'完全掌握奧能源流', active:{cd:13, icon:'💠', name:'奧能洪流', desc:'對全體造成5次100%傷害'} },
     ],
     slots:[
-      { unlockStage:2, options:[
+      { unlockStage:1, options:[
         {icon:'📖', name:'博學', desc:'法術傷害+10%', tag:'輸出'},
         {icon:'🫧', name:'法盾', desc:'獲得10%生命的護盾', tag:'生存'},
         {icon:'🔋', name:'聚能', desc:'奧能獲取+30%', tag:'機制'} ]},
-      { unlockStage:3, options:[
+      { unlockStage:2, options:[
         {icon:'🔥', name:'燃燒', desc:'法術附帶灼燒', tag:'輸出'},
         {icon:'❤️', name:'體魄', desc:'生命上限+12%', tag:'生存'},
         {icon:'💠', name:'奧能親和', desc:'滿奧能時法術傷害+20%', tag:'機制'} ]},
-      { unlockStage:4, options:[
+      { unlockStage:3, options:[
         {icon:'⚡', name:'雷擊', desc:'普攻15%機率連鎖閃電', tag:'輸出'},
         {icon:'🧊', name:'寒霜護體', desc:'受擊減速攻擊者', tag:'生存'},
         {icon:'⏳', name:'時間扭曲', desc:'主動技冷卻-15%', tag:'機制'} ]},
-      { unlockStage:5, options:[
+      { unlockStage:4, options:[
         {icon:'☄️', name:'湮滅', desc:'主動技傷害+25%', tag:'輸出'},
         {icon:'🛡️', name:'大法師護盾', desc:'護盾效果+40%', tag:'生存'},
         {icon:'♾️', name:'奧能洪流', desc:'奧能自動緩慢累積', tag:'機制'} ]},
+      { unlockStage:5, options:[
+        {icon:'🌠', name:'星界崩解', desc:'主動技命中後追加傷害', tag:'輸出'},
+        {icon:'🔷', name:'永恆法盾', desc:'護盾破裂後回復生命', tag:'生存'},
+        {icon:'🔁', name:'奧能循環', desc:'奧能滿值效果延長', tag:'機制'} ]},
     ]
   }
 };
 
 /* ================= 玩家狀態（對應規格 5.2） ================= */
 const initState = () => ({
-  line:null, stage:1, level:1, gold:99999, gem:999,
+  line:null, stage:1, level:1, xp:6380, xpMax:10000, gold:99999, gem:999,
   // 每槽 0..3；全職業共用可解鎖候選數量
-  slotUnlockCounts:[0,0,0,0],
+  slotUnlockCounts:[0,0,0,0,0],
   // 各線獨立保存：每槽 = { unlocked:[已選索引], equipped:索引 } 或 null
   choices:{
     warrior:{},
@@ -410,12 +490,11 @@ function toast(msg){ const t=$('toast'); t.textContent=msg; t.style.display='blo
   clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.style.display='none',1800); }
 function hide(id){ $(id).classList.remove('show'); }
 function show(id){ $(id).classList.add('show'); }
-const OPERATION_LAYERS = ['ov-switch','ov-confirm','sheet'];
+const OPERATION_LAYERS = ['ov-switch','ov-evolve','sheet'];
 function showOnly(id){
-  bubbleSlot = null;
   OPERATION_LAYERS.forEach(layerId => layerId === id ? show(layerId) : hide(layerId));
 }
-function hideAll(){ bubbleSlot = null; OPERATION_LAYERS.forEach(hide); }
+function hideAll(){ OPERATION_LAYERS.forEach(hide); }
 
 function ensureSlotCountsForStage(){
   const slots = LINES.warrior.slots;
@@ -425,26 +504,13 @@ function ensureSlotCountsForStage(){
 }
 function sharedUnlockCount(i){ return S.slotUnlockCounts[i] ?? 0; }
 
-/* 主要技能卡（含右上冷卻角標），四處共用 */
+/* 主動技能卡：圖示在左上，名稱與敘述在右，不顯示冷卻 */
 function skillCard(active){
   return `<div class="skill-card">
-    <span class="cd-badge">⏱ ${active.cd}s</span>
     <div class="skill-icon">${active.icon}</div>
     <div><div class="t">${active.name}</div><div class="d">${active.desc}</div></div>
   </div>`;
 }
-
-/* v0.5：已選槽 bubble 快覽 */
-let bubbleSlot = null;
-function toggleSlotBubble(e, i){
-  e.stopPropagation();
-  bubbleSlot = (bubbleSlot === i) ? null : i;
-  renderMain();
-  if (bubbleSlot !== null)
-    setTimeout(()=>document.addEventListener('click', closeSlotBubble, {once:true}), 0);
-}
-function closeSlotBubble(){ if (bubbleSlot !== null){ bubbleSlot = null; renderMain(); } }
-function manageSlot(e, i){ e.stopPropagation(); bubbleSlot = null; renderMain(); openSheet(i); }
 
 function slotChoice(lineId, i){ return S.choices[lineId][i] ?? null; }  // {unlocked, equipped} | null
 function ensureSlotChoice(lineId, i){
@@ -461,13 +527,15 @@ function slotState(lineId, i){
 /* ================= HUD / 主頁 ================= */
 function renderHUD(){
   $('hud-lv').textContent = S.level;
+  $('hud-xp').textContent = `${S.xp.toLocaleString()} / ${S.xpMax.toLocaleString()}`;
+  const xpPercent = Math.round(Math.min(100, Math.max(0, S.xp / S.xpMax * 100)) * 10) / 10;
+  $('hud-xp-fill').style.width = `${xpPercent}%`;
   $('hud-gold').textContent = S.gold.toLocaleString();
   $('hud-gem').textContent = S.gem.toLocaleString();
   $('career-tab').classList.toggle('has-dot', !S.line && S.level >= CAREER_UNLOCK_LV);
 }
 
-let justUnlockedSlots = new Set();
-let rankGlow = false;
+let newlyOpenedSlot = null;
 
 function slotHTML(lineId, i, interactive){
   const def = LINES[lineId].slots[i];
@@ -477,25 +545,15 @@ function slotHTML(lineId, i, interactive){
   const localUnlocked = c?.unlocked.length ?? 0;
   const available = Math.max(0, shared - localUnlocked);
   const dot = interactive && available > 0 ? ' has-dot' : '';
-  const pulse = (interactive && justUnlockedSlots.has(i)) ? ' just-unlocked' : '';
-  if (st==='locked') return `<div class="slot locked"><span>🔒</span><small>${def.unlockStage}階解鎖</small></div>`;
+  const feedback = interactive && newlyOpenedSlot === i ? ' newly-opened' : '';
+  if (st==='locked') return `<div class="slot locked${feedback}"><span>🔒</span><small>${def.unlockStage}階解鎖</small></div>`;
   if (st==='empty'){
     const click = interactive ? `onclick="openSheet(${i})"` : '';
-    return `<div class="slot empty${dot}${pulse}" ${click}><em class="slot-count">${shared}/3</em><span>❓</span><small>可選擇</small></div>`;
+    return `<div class="slot empty${dot}${feedback}" ${click}><em class="slot-count">${shared}/3</em><span>❓</span><small>可選擇</small></div>`;
   }
   const opt = def.options[c.equipped];
-  const click = interactive ? `onclick="toggleSlotBubble(event,${i})"` : '';
-  let bubble = '';
-  if (interactive && bubbleSlot === i){
-    const total = LINES[lineId].slots.length;
-    const align = i === 0 ? 'al' : (i === total - 1 ? 'ar' : 'ac');
-    bubble = `<div class="slot-bubble ${align}" onclick="event.stopPropagation()">
-      <div class="bt">${opt.icon} ${opt.name} <span style="font-weight:400;color:#c9bda2">[${opt.tag}]</span></div>
-      ${opt.desc}
-      <button class="btn-mini" onclick="manageSlot(event,${i})">切換 / 解鎖</button>
-    </div>`;
-  }
-  return `<div class="slot filled${dot}${pulse}" ${click}>${bubble}<em class="slot-count">${shared}/3</em><span>${opt.icon}</span><small>${opt.name}</small></div>`;
+  const click = interactive ? `onclick="openSheet(${i})"` : '';
+  return `<div class="slot filled${dot}${feedback}" ${click}><em class="slot-count">${shared}/3</em><span>${opt.icon}</span><small>${opt.name}</small></div>`;
 }
 
 function renderMain(){
@@ -511,20 +569,30 @@ function renderMain(){
     ? `<button class="btn gold" disabled>職業階級已滿</button>`
     : canEvolve
     ? `<button class="btn gold has-dot" onclick="requestEvolve()">職業升階<span class="sub">🪙 ${EVOLVE_COST[S.stage].toLocaleString()}</span></button>`
-    : `<button class="btn gold" disabled>職業升階<span class="sub">Lv.${nextGate} 解鎖</span></button>`;
+    : `<button class="btn gold" onclick="requestEvolve()">職業升階預覽<span class="sub">Lv.${nextGate} 可升階</span></button>`;
+  const starPositions = ['p0','p2','p4','p1','p3'];
+  const passiveNodes = L.slots.map((_,i)=>`<div class="star-node ${starPositions[i]}">${slotHTML(S.line,i,true)}</div>`).join('');
   m.innerHTML = `
-    <div class="char-area ${rankGlow?'glow':''}">
-      <div class="char-emoji">${st.emoji}</div>
-      <div class="char-pedestal"></div>
-      <span class="class-pill">${st.name}</span>
+    <div class="career-summary-grid">
+      <div class="career-summary-hero">
+        <div class="char-emoji">${st.emoji}</div>
+        <div class="char-pedestal"></div>
+        <span class="class-pill">${st.name}</span>
+      </div>
+      <div class="career-summary-skill">
+        <div class="summary-label">主動技能</div>
+        ${skillCard(st.active)}
+      </div>
     </div>
-    <div class="info-rows">
-      <div class="info-row"><b>機制</b><span style="color:${L.resourceColor};font-weight:700">${L.mechIcon} ${L.resourceDesc}</span></div>
+    <div class="passive-section">
+      <div class="passive-heading">被動技能 <small>解鎖次數全職業共用</small></div>
+      <div class="passive-star-grid">
+        <svg class="passive-star-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <polyline points="50,15 69,82 20,43 80,43 31,82 50,15"></polyline>
+        </svg>
+        ${passiveNodes}
+      </div>
     </div>
-    <div><span class="sec-label">主要技能</span></div>
-    ${skillCard(st.active)}
-    <div><span class="sec-label">被動技能</span> <small style="color:#8a7f66;font-size:10px">解鎖次數全職業共用</small></div>
-    <div class="slots">${L.slots.map((_,i)=>slotHTML(S.line,i,true)).join('')}</div>
     <div class="btn-row">
       <button class="btn blue" onclick="openSwitch()">切換職業</button>
       ${rankButton}
@@ -535,21 +603,20 @@ function renderMain(){
 let pickSel = null;
 function careerCardHTML(id, stageIndex, mode, selectedId = null){
   const L = LINES[id];
-  const base = L.stages[stageIndex];
-  const final = L.stages[L.stages.length-1];
-  const current = mode === 'switch' && id === S.line;
+  const base = L.stages[0];
   const selected = id === selectedId;
-  const interactive = (mode === 'pick' || mode === 'switch') && !current;
-  const click = !interactive ? '' : mode === 'pick'
-    ? `onclick="pickSel='${id}';renderMain()"`
-    : `onclick="switchTarget='${id}';renderSwitch()"`;
-  return `<div class="career-select-card ${mode==='preview'?'preview':''} ${selected?'sel':''} ${current?'current':''}" ${click}>
-    ${current?'<span class="career-use-tag">使用中</span>':''}
-    <div class="career-card-visuals">
-      <div class="career-art-box base">${base.emoji}</div>
-      <div class="career-art-box final-silhouette">${final.emoji}</div>
+  const interactive = mode === 'pick';
+  const click = interactive ? `onclick="pickSel='${id}';renderMain()"` : '';
+  return `<div class="career-select-card ${mode==='preview'?'preview':''} ${selected?'sel':''}" ${click}>
+    <span class="career-role-tag" style="background:${L.roleColor}">${L.role}</span>
+    <div class="career-pick-info">
+      <div class="career-pick-name">${base.name}</div>
+      <div class="career-pick-skill">
+        <span class="mini-label">技能</span>
+        <div><div class="skill-name">${base.active.name}</div><div class="skill-desc">${base.active.desc}</div></div>
+      </div>
     </div>
-    <div class="career-card-name">${base.name}</div>
+    <div class="career-pick-art">${base.emoji}</div>
   </div>`;
 }
 function renderCareerEntry(){
@@ -582,7 +649,6 @@ function confirmPick(){
 let sheetSlot = null, sheetSel = null;
 function openSheet(i){
   if (slotState(S.line,i) === 'locked') return;
-  bubbleSlot = null;
   sheetSlot = i; sheetSel = null;
   renderSheet();
   showOnly('sheet');
@@ -608,7 +674,7 @@ function renderSheet(){
     const click = equipped ? '' : owned ? `onclick="equipOption(${idx})"` : `onclick="sheetSel=${idx};renderSheet()"`;
     return `<div class="opt ${cls}" ${click}>
       <div class="oi">${o.icon}</div>
-      <div style="flex:1"><div class="ot">${o.name} <span class="link-mech">[${o.tag}]</span></div><div class="od">${o.desc}</div></div>
+      <div style="flex:1"><div class="ot">${o.name}</div><div class="od">${o.desc}</div></div>
       ${right}</div>`;
   }).join('');
   const actionSub = hasFreeEntitlement ? '' : `🪙 ${UNLOCK_COST}`;
@@ -617,8 +683,11 @@ function renderSheet(){
     <button class="btn gold" ${sheetSel===null?'disabled':''} onclick="unlockSelectedOption()">解鎖並裝備${actionDetail}</button>`;
   $('sheet').innerHTML = `
     <div class="passive-dialog">
-      ${rows}
-      <div class="passive-actions">${footer}</div>
+      <div class="passive-dialog-title">選擇被動技能・槽位 ${sheetSlot + 1}</div>
+      <div class="passive-dialog-body">
+        ${rows}
+        <div class="passive-actions">${footer}</div>
+      </div>
     </div>`;
 }
 function equipOption(idx){
@@ -646,45 +715,107 @@ function unlockSelectedOption(){
   toast(useFreeEntitlement ? '已使用共用次數解鎖' : `共用解鎖次數提升至 ${count}/3`);
 }
 
-/* ================= 升階：單層確認，結果回原頁 ================= */
+/* ================= 升階：同層預覽、直接升階 ================= */
 function requestEvolve(){
+  renderEvolve();
+  showOnly('ov-evolve');
+}
+function renderEvolve(){
+  const L = LINES[S.line];
+  const maxed = S.stage >= L.stages.length;
   const nextStage = S.stage + 1;
-  const cost = EVOLVE_COST[S.stage];
-  if (nextStage > 5) return;
-  if (S.level < STAGE_LV[S.stage]) return toast(`需 Lv.${STAGE_LV[S.stage]}`);
-  askConfirm(`升至第 ${nextStage} 階<br><span class="cost">🪙 ${cost.toLocaleString()}</span>`, doEvolve);
+  const gate = STAGE_LV[S.stage] ?? STAGE_LV[STAGE_LV.length - 1];
+  const cost = EVOLVE_COST[S.stage] ?? 0;
+  const canEvolve = !maxed && S.level >= gate && S.gold >= cost;
+  const route = L.stages.map((stage,idx)=>{
+    const stageNo = idx + 1;
+    const state = stageNo < S.stage ? 'owned' : stageNo === S.stage ? 'current' : stageNo === S.stage + 1 ? 'next' : 'future';
+    return `<div class="route-stage ${state}">
+      <div class="route-art">${stage.emoji}</div>
+      <div class="route-name">${stage.name}</div>
+      <div class="route-lv">Lv.${STAGE_LV[idx]}</div>
+    </div>${idx < L.stages.length - 1 ? '<div class="route-arrow">➜</div>' : ''}`;
+  }).join('');
+  let preview = `<div class="preview-section-title" style="text-align:center">已完成全部職業階級</div>`;
+  if (!maxed){
+    const slot = L.slots[S.stage];
+    preview = `<div class="preview-section-title">第 ${nextStage} 階開放・被動技能 3 選 1</div>
+      <div class="unlock-preview-list">${slot.options.map(o=>`<div class="unlock-preview-option">
+        <div class="oi">${o.icon}</div>
+        <div><div class="ot">${o.name}</div><div class="od">${o.desc}</div></div>
+      </div>`).join('')}</div>`;
+  }
+  const action = maxed
+    ? `<button class="btn gold" disabled>職業階級已滿</button>`
+    : `<button class="btn gold" ${canEvolve?'':'disabled'} onclick="doEvolve()">升至第 ${nextStage} 階</button>`;
+  $('ov-evolve').innerHTML = `<div class="dialog compact">
+    <div class="dialog-title">職業升階${canEvolve?'':'預覽'}</div>
+    <div class="dialog-body">
+      <div class="evolve-route" id="evolve-route">${route}</div>
+      ${preview}
+      ${action}
+    </div>
+    <button class="close-x" onclick="hide('ov-evolve')">✕</button>
+  </div>`;
+  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(()=>{
+    const routeEl = $('evolve-route');
+    const currentEl = routeEl?.querySelector('.route-stage.current');
+    const targetEl = routeEl?.querySelector('.route-stage.next') ?? currentEl;
+    if (!routeEl || !currentEl || !targetEl) return;
+    const currentCenter = currentEl.offsetLeft + currentEl.offsetWidth / 2;
+    const targetCenter = targetEl.offsetLeft + targetEl.offsetWidth / 2;
+    routeEl.scrollLeft = Math.max(0, (currentCenter + targetCenter) / 2 - routeEl.clientWidth / 2);
+  });
 }
 function doEvolve(){
+  if (S.stage >= LINES[S.line].stages.length) return;
+  const gate = STAGE_LV[S.stage];
   const cost = EVOLVE_COST[S.stage];
+  if (S.level < gate) return toast(`需 Lv.${gate}`);
   if (S.gold < cost) return toast('金幣不足');
   S.gold -= cost;
   S.stage += 1;
   ensureSlotCountsForStage();
-  justUnlockedSlots = new Set(
-    LINES[S.line].slots.map((slot,i)=>({slot,i})).filter(x=>x.slot.unlockStage===S.stage).map(x=>x.i)
-  );
-  rankGlow = true;
+  newlyOpenedSlot = LINES[S.line].slots.findIndex(slot=>slot.unlockStage === S.stage);
   hideAll(); renderMain();
   toast(`升至第 ${S.stage} 階`);
-  setTimeout(()=>{ rankGlow=false; justUnlockedSlots=new Set(); renderMain(); },1400);
+  setTimeout(()=>{ newlyOpenedSlot = null; renderMain(); },800);
 }
 
 /* ================= 切換職業 ================= */
 let switchTarget = null;
 function openSwitch(){
-  switchTarget = null;
+  switchTarget = Object.keys(LINES).find(id=>id !== S.line);
   renderSwitch();
   showOnly('ov-switch');
 }
+function alternateSwitchTarget(){
+  switchTarget = Object.keys(LINES).find(id=>id !== S.line && id !== switchTarget);
+  renderSwitch();
+}
 function renderSwitch(){
-  const cards = Object.keys(LINES).map(id=>careerCardHTML(id,S.stage-1,'switch',switchTarget)).join('');
-  const buttonText = switchTarget ? `切換為${LINES[switchTarget].stages[S.stage-1].name}` : '選擇職業';
+  const current = LINES[S.line].stages[S.stage-1];
+  const targetLine = LINES[switchTarget];
+  const target = targetLine.stages[S.stage-1];
+  const otherId = Object.keys(LINES).find(id=>id !== S.line && id !== switchTarget);
+  const otherName = LINES[otherId].stages[S.stage-1].name;
   $('ov-switch').innerHTML = `
-    <div class="dialog">
+    <div class="dialog compact">
       <div class="dialog-title">切換職業</div>
       <div class="dialog-body">
-        <div class="career-card-grid switch-grid">${cards}</div>
-        <button class="btn blue" ${switchTarget?'':'disabled'} onclick="doSwitch()">${buttonText}</button>
+        <div class="switch-comparison">
+          <div class="switch-person"><div class="art">${current.emoji}</div><div class="name">${current.name}</div></div>
+          <div class="switch-arrow">➜</div>
+          <div class="switch-person target"><div class="art">${target.emoji}</div><div class="name">${target.name}</div></div>
+        </div>
+        <div class="preview-section-title">主動技能</div>
+        ${skillCard(target.active)}
+        <div class="preview-section-title">被動技能</div>
+        <div class="switch-passive-grid">${targetLine.slots.map((_,i)=>slotHTML(switchTarget,i,false)).join('')}</div>
+        <div class="parallel-actions">
+          <button class="btn red" onclick="alternateSwitchTarget()">改看${otherName}</button>
+          <button class="btn blue" onclick="doSwitch()">切換為${target.name}</button>
+        </div>
       </div>
       <button class="close-x" onclick="hide('ov-switch')">✕</button>
     </div>`;
@@ -698,34 +829,6 @@ function doSwitch(){
   toast(`已切換為${targetName}`);
 }
 
-/* ================= 通用確認框 / 成功頁 ================= */
-let confirmCb = null, cancelCb = null;
-function askConfirm(html, cb, onCancel = null){
-  confirmCb = cb;
-  cancelCb = onCancel;
-  $('ov-confirm').innerHTML = `
-    <div class="confirm-box">
-      <div class="dialog-title" style="border-radius:14px 14px 0 0">提示</div>
-      <p>${html}</p>
-      <div class="confirm-btns">
-        <button class="btn" style="background:#c04a3a" onclick="cancelConfirm()">取消</button>
-        <button class="btn blue" onclick="acceptConfirm()">確認</button>
-      </div>
-    </div>`;
-  showOnly('ov-confirm');
-}
-function cancelConfirm(){
-  const cb = cancelCb;
-  confirmCb = null; cancelCb = null;
-  hide('ov-confirm');
-  if (cb) cb();
-}
-function acceptConfirm(){
-  const cb = confirmCb;
-  confirmCb = null; cancelCb = null;
-  hide('ov-confirm');
-  if (cb) cb();
-}
 /* ================= Debug ================= */
 const dbg = {
   lv(d){ S.level = Math.max(1, S.level + d); renderMain(); toast(`等級 → ${S.level}`); },
