@@ -12,6 +12,8 @@ $demoFile = $demoItem.Name
 $demoPath = $demoItem.FullName
 
 $fileNames = @{
+  'preview'       = '00-preview.png'
+  'pick'          = '00-first-choice.png'
   'main'          = '01-main.png'
   'evolve'        = '02-evolve.png'
   'passive'       = '03-passive.png'
