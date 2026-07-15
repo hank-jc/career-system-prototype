@@ -25,19 +25,24 @@ Demo 裡的黃色圓圈、金色框、米色底板、Emoji、圓角與陰影都�
 - 角色圖片是主要視覺，文字與裝飾不應搶過角色。
 - 技能名稱、技能敘述、數值與 Emoji 目前都是佔位內容。
 
-![遊戲內 Upgrades 頁參考](菇截圖/upgrades-example.png)
+<a href="./菇截圖/upgrades-example.png"><img src="./菇截圖/upgrades-example.png" alt="遊戲內 Upgrades 頁參考" width="300"></a>
 
 ---
 
 ## 2. 初次選擇職業
 
-### 排版參考
-
-![初次選擇職業 Demo 排版](art-handoff-screenshots/00-first-choice.png)
-
-### 風格參考
-
-![初次選擇職業既有美術示意](菇截圖/choose-class.png)
+<table>
+<tr>
+<td width="50%" valign="top">
+<strong>排版參考</strong><br>
+<a href="./art-handoff-screenshots/00-first-choice.png"><img src="./art-handoff-screenshots/00-first-choice.png" alt="初次選擇職業 Demo 排版" width="300"></a>
+</td>
+<td width="50%" valign="top">
+<strong>風格參考</strong><br>
+<a href="./菇截圖/choose-class.png"><img src="./菇截圖/choose-class.png" alt="初次選擇職業既有美術示意" width="300"></a>
+</td>
+</tr>
+</table>
 
 ### 畫面構成
 
@@ -59,13 +64,18 @@ Demo 裡的黃色圓圈、金色框、米色底板、Emoji、圓角與陰影都�
 
 ## 3. 職業主頁
 
-### 排版參考
-
-![職業主頁 Demo 排版](art-handoff-screenshots/01-main.png)
-
-### 風格參考
-
-![職業主頁既有美術示意](菇截圖/class-main-2.png)
+<table>
+<tr>
+<td width="50%" valign="top">
+<strong>排版參考</strong><br>
+<a href="./art-handoff-screenshots/01-main.png"><img src="./art-handoff-screenshots/01-main.png" alt="職業主頁 Demo 排版" width="300"></a>
+</td>
+<td width="50%" valign="top">
+<strong>風格參考</strong><br>
+<a href="./菇截圖/class-main-2.png"><img src="./菇截圖/class-main-2.png" alt="職業主頁既有美術示意" width="420"></a>
+</td>
+</tr>
+</table>
 
 ### 畫面構成
 
@@ -97,7 +107,7 @@ Demo 裡的黃色圓圈、金色框、米色底板、Emoji、圓角與陰影都�
 
 ### 排版參考
 
-![被動技能選擇 Demo 排版](art-handoff-screenshots/03-passive.png)
+<a href="./art-handoff-screenshots/03-passive.png"><img src="./art-handoff-screenshots/03-passive.png" alt="被動技能選擇 Demo 排版" width="320"></a>
 
 ### 畫面構成
 
@@ -119,13 +129,18 @@ Demo 裡的黃色圓圈、金色框、米色底板、Emoji、圓角與陰影都�
 
 ## 5. 切換職業
 
-### 排版參考
-
-![切換職業 Demo 排版](art-handoff-screenshots/04-switch.png)
-
-### 風格參考
-
-![切換職業既有美術示意](菇截圖/switch-class.png)
+<table>
+<tr>
+<td width="50%" valign="top">
+<strong>排版參考</strong><br>
+<a href="./art-handoff-screenshots/04-switch.png"><img src="./art-handoff-screenshots/04-switch.png" alt="切換職業 Demo 排版" width="300"></a>
+</td>
+<td width="50%" valign="top">
+<strong>風格參考</strong><br>
+<a href="./菇截圖/switch-class.png"><img src="./菇截圖/switch-class.png" alt="切換職業既有美術示意" width="420"></a>
+</td>
+</tr>
+</table>
 
 ### 畫面構成
 
@@ -145,7 +160,7 @@ Demo 裡的黃色圓圈、金色框、米色底板、Emoji、圓角與陰影都�
 
 ### 排版參考
 
-![職業升階 Demo 排版](art-handoff-screenshots/02-evolve.png)
+<a href="./art-handoff-screenshots/02-evolve.png"><img src="./art-handoff-screenshots/02-evolve.png" alt="職業升階 Demo 排版" width="320"></a>
 
 ### 畫面構成
 
